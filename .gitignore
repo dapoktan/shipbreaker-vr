@@ -5,3 +5,17 @@ riderModule.iml
 /_ReSharper.Caches/
 .idea
 *.user
+artifacts/
+docs/VALIDATION.md
+docs/history/
+ShipbreakerVrUnity/Library/
+ShipbreakerVrUnity/Temp/
+ShipbreakerVrUnity/Logs/
+ShipbreakerVrUnity/UserSettings/
+ShipbreakerVrUnity/Build/
+ShipbreakerVrUnity/obj/
+ShipbreakerVrUnity/*.csproj
+ShipbreakerVrUnity/*.sln
+ShipbreakerVrUnity/AssetBundles/debugrays*
+ShipbreakerVrUnity/Assets/Generated/
+ShipbreakerVrUnity/Assets/Generated.meta
