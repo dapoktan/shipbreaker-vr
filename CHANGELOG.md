@@ -1,5 +1,16 @@
 # Changes
 
+## 0.4.32 beta1 — helmet damage and input recovery prevention
+
+- Attach visor damage to the tracked head and read eye coverage from the actual HDRP/OpenXR render passes.
+- Preserve native apparent sizing for both small white sprites and the larger white crack; keep repair/removal under game control.
+- Fit the separate critical shattered-glass model across the headset view, retaining its native material and warning lights.
+- Retry temporarily unavailable XR eye data instead of permanently reverting to the original close-up effects.
+- Guard unsupported legacy joystick slots/indices that can interrupt input updates and leave subsequent updates stuck.
+- Keep existing bindings, calibrated tools, HUD settings, scanner rendering and installer behavior unchanged.
+
+Versions 0.4.28–0.4.31 were local test candidates, not public releases.
+
 ## 0.4.27 beta — portable release preparation
 
 - Package the accepted 0.4.26 controls, tool calibration, HUD and haptics.

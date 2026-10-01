@@ -120,3 +120,54 @@ turns, and mode/VR-toggle restoration remain separate acceptance checks.
 Further user confirmation on 0.4.20: pressure indicators are visible as well.
 Room labels and pressure-indicator visibility are now accepted on Pico/Steam Link.
 Pressure-state transitions and lifecycle edge cases were not separately reported.
+
+## 0.4.27-beta2 stereo report review - 2026-10-01
+
+Reviewed publication commit `e6d95c539f7c83e2d9f9a63e774a671d7bd21ac8`.
+A tester reports stereo-incorrect scanning on Quest 3 through VDXR, with only
+the starting scanner mode unlocked. The affected visual (ship highlighting or
+HUD panel), eye-specific symptom and runtime capture are not available. This
+is a source/asset inspection, not a reproduced headset defect or verified fix.
+
+Findings:
+
+- The existing structural-room adapter is not evidence that the starting
+  scanner's ship highlighting is stereo-correct. Those are separate paths.
+- Native `HighlightComponent.ApplyMaterial` replaces ship renderer/MeshCache
+  materials. Inspection of the installed scan-mode material bundle resolves
+  `Scanner_Object_General`, `Scanner_Object_General_Small` and
+  `Scanner_Background_ObjectMode` to `Wireframe/Simple/Lynx`. Its compiled
+  parameter metadata uses legacy `UnityPerFrame` / `unity_MatrixVP` and
+  `UnityPerCamera` / `_WorldSpaceCameraPos`. Normal HDRP materials use HDRP's
+  separate camera constant buffer. The mod does not replace these scanner
+  shaders or add a scanner-specific stereo render adapter.
+- The project's OpenXR setting selects MultiPass. Missing instanced-stereo
+  shader variants alone therefore do **not** prove this report's cause.
+  The installed HDRP `XRPass.StartSinglePass` also updates view/projection
+  matrices for multipass (despite that method's name). A blanket claim that
+  the scanner always receives a mono matrix would be incorrect.
+- A concrete risk remains in native `HUDCustomPass.Execute` and
+  `DrawUICameraCustomPass.Execute`: they switch camera state for a UI camera,
+  then restore `SetupCameraProperties(hdCamera.camera)` without stereo
+  arguments or explicitly restoring the current XR pass matrices. If such a
+  pass executes before scanner geometry with no subsequent XR matrix reset,
+  legacy scanner materials can receive different camera state from HDRP
+  materials. The relevant active pass/injection order and resulting GPU
+  state must be captured before identifying this as the reported cause.
+- Converted HUD materials retain their original shaders. Their depth/sorting
+  overrides address visibility, not every possible shader stereo issue.
+  The separate scanning-progress radial-fill pixel/world mismatch documented
+  above is still unadapted; there is no evidence it caused this report.
+
+Next verification: capture both eyes in the same stationary scene with the
+starting scanner off/on, keeping a nearby recognizable ship edge in view.
+Check whether the ship silhouette/highlight changes apparent depth or differs
+between eyes, versus only the HUD text panel. Record the actual render mode,
+active custom passes/injection points and the legacy versus HDRP view-projection
+state at the scanner draw. Repeat on SteamVR if available to distinguish a
+runtime-dependent symptom from a shared rendering defect. VDXR is currently
+the reported test environment, not an established cause.
+
+No runtime code, installed mod, release archive or published commit was changed
+by this review. Proprietary shader metadata and reconstructed game sources
+remain outside the repository.

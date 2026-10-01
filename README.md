@@ -1,4 +1,4 @@
-# Shipbreaker VR — 0.4.27 beta
+# Shipbreaker VR — 0.4.32 beta1
 
 An unofficial Windows PCVR mod for **Hardspace: Shipbreaker**, based on [Raicuparta/shipbreaker-vr](https://github.com/Raicuparta/shipbreaker-vr). Uses OpenXR for headset/controller tracking and game-specific adapters for tools, movement and menus.
 
@@ -22,6 +22,7 @@ No Unity editor, developer SDK, separate BepInEx installation or mod manager is 
 - Disembodied tools with calibrated beam origins; stock tool range and game rules.
 - Head-following curved gameplay HUD, loading/menu composition and clipped ship cards.
 - Structural scanner room labels and pressure indicators.
+- Head-following helmet damage, native-sized white cracks and full-view critical shattered glass.
 - Native Frame ABXY/D-pad/LB/RB/Menu/View input, plus full-grip shortcuts. Pico retains its own layout.
 - UI geometry caching and sorting optimizations. Performance depends on game scene, render resolution, CPU/GPU and streaming; no frame-rate guarantee.
 
@@ -47,6 +48,6 @@ The scripts are unsigned. The ZIP SHA-256 detects accidental corruption; it is n
 
 See [known issues and test checklist](docs/KNOWN-ISSUES.md). Close the game before sharing `BepInEx/LogOutput.log`; review it for local paths/system details first. F7 records UI diagnostics. F9 starts/stops an optional timing capture; reports are written under `BepInEx`.
 
-This beta packages the working 0.4.26 gameplay with release cleanup. The portable installer and managed checks have separate automated validation; a final headset smoke test of the packaged build is still required. It has not been published upstream.
+This beta adds accepted helmet-damage presentation fixes and legacy joystick bounds protection to the 0.4.27-beta2 baseline. The user tested the 0.4.32 mod in headset; final ZIP installation and regression checks are validated separately. Other headset/runtime combinations remain unverified. Scanner rendering and controller bindings are unchanged in this update.
 
 Source build instructions: [BUILD.md](docs/BUILD.md). Architecture and file inventory are in the source repository's `docs` folder. Mod source retains the upstream MIT license; bundled runtime notices are in [THIRD-PARTY.md](THIRD-PARTY.md) and `licenses`.

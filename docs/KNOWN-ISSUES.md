@@ -12,12 +12,15 @@ The UI cache reduced measured mod work. Smoothness on High was reported on the d
 
 Install the extracted package with the game closed, then verify:
 
-1. Log identifies ShipbreakerVr 0.4.27; VR starts, both hands track, release/center restores input.
+1. Log identifies ShipbreakerVr 0.4.32; VR starts, both hands track, release/center restores input.
 2. Main menu, new/load game, habitat computer and backing out, workyard loading text over static, pause/options tabs and Free Play ship-card clipping.
 3. Movement/brake/roll, tool wheel, scanner, flashlight, recall tethers, Menu/View and Frame full-click shortcuts or Pico chords.
 4. Stinger first shot and muzzle, grapple/retract/tether/push, Splitsaw angle, demo charge placement and detonator.
 5. Structural scanner room labels and pressure indicators, readable HUD and haptics.
 6. VR toggle both directions, dashboard/focus loss and tracking recovery. Release controls before resuming.
-7. Quit and relaunch. Inspect the log for repeated errors.
+7. Check small and larger white helmet cracks, critical red glass coverage, head following and removal on repair.
+8. Quit and relaunch. Inspect the log for repeated errors.
 
-The final packaged 0.4.27 headset pass is pending. Automated build/installer checks do not replace this pass. No new performance comparison is required merely to validate packaging.
+The user accepted the 0.4.32 damage fix after headset testing and previously confirmed input and repair work. This is not a separately recorded pass for every item above or a headset run of the final portable ZIP. Automated build/installer checks do not replace that pass. No new performance comparison is required merely to validate packaging.
+
+The critical damage effect retains the native curved glass and lights; appearance on other headsets remains unverified. A report about the starting scanner's stereo appearance on Quest 3/VDXR remains unconfirmed; no scanner-rendering change is included in this release.

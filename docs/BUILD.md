@@ -30,16 +30,17 @@ If the editor project is at a separate short path, also pass `-UnityProjectDir` 
 ```powershell
 dotnet restore tests/TrackingChecks.csproj --locked-mode --configfile NuGet.Config
 dotnet build tests/TrackingChecks.csproj --no-restore -c Release '-p:GameDir=D:\SteamLibrary\steamapps\common\Hardspace Shipbreaker'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/Prepare-InControlFixture.ps1 -GameDir 'D:\SteamLibrary\steamapps\common\Hardspace Shipbreaker'
 .\tests\bin\Release\net48\TrackingChecks.exe
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\PortableInstallerChecks.ps1
 ```
 
-The managed suite covers 320 tracking/input/geometry/cache policies. The installer suite uses an isolated fixture and Windows PowerShell 5.1, matching the public CMD launchers. Neither simulates headset rendering or Unity lifecycle behavior.
+The managed suite covers 388 tracking/input/geometry/cache checks. Preparing the private InControl fixture replaces only its Unity-native clock call so desktop tests can exercise input commit behavior; installed game files are not edited. The installer suite uses an isolated fixture and Windows PowerShell 5.1, matching the public CMD launchers. Neither simulates headset rendering or Unity lifecycle behavior.
 
 ## Portable ZIP
 
 ```powershell
-.\scripts\package.ps1 -StageDir .\artifacts\Release\Mod -UnityProjectDir .\ShipbreakerVrUnity -OutputDir .\artifacts\packages
+.\scripts\package.ps1 -StageDir .\artifacts\Release\Mod -UnityProjectDir .\ShipbreakerVrUnity -OutputDir .\artifacts\packages -PackageLabel beta1
 ```
 
 Packaging uses explicit file groups, re-exports native files from the matching dependency player, includes runtime licenses and hashes every payload file. It excludes game DLLs, Unity player/editor binaries, PDBs, local configs, logs, performance captures and test backups. It creates the ZIP and an adjacent SHA-256 file; these are not cryptographic signatures.

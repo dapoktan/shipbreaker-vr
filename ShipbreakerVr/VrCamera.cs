@@ -119,7 +119,7 @@ public class VrCamera : MonoBehaviour
         }
         // Loading can destroy the previous game camera before the next one exists.
         // Keep head tracking and the UI view alive at the last body pose across that gap.
-        vrCamera.cullingMask = sourceMask | VrUi.VisibleLayerMask;
+        vrCamera.cullingMask = sourceMask | VrUi.VisibleLayerMask | VrHelmetDamage.VisibleLayerMask;
         vrCamera.enabled = true;
         if (Time.unscaledTime >= nextCanvasScan)
         {

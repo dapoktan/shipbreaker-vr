@@ -13,6 +13,38 @@ internal static class Program
 
     private static void CheckPresentation()
     {
+        Check(PresentationGeometry.IsCriticalHelmetEffect("FX_ShatteredGlass_Helmet_01(Clone)"), "Actual critical red helmet prefab uses critical fitting");
+        Check(!PresentationGeometry.IsCriticalHelmetEffect("FX_VisorCrack(Clone)"), "Larger white quad must not receive critical red enlargement");
+        Check(!PresentationGeometry.IsCriticalHelmetEffect("FX_VisorCrack_Small_04(Clone)"), "Small white cracks retain native size");
+        var criticalFit = PresentationGeometry.CriticalHelmetFit(new Vector2(.34f, .24f), .2f, new Rect(-33, -34.5f, 66, 58), 20);
+        Check(.34f * criticalFit.x >= 1.3199f && .24f * criticalFit.y >= 1.1599f, "Critical mesh covers both headset views with room for its rounded boundary");
+        Check(Math.Abs(PresentationGeometry.DamageAxisScale(Vector3.forward, criticalFit) - 1) < .00001f, "Critical fitting does not scale the visor depth axis");
+        Check(Math.Abs(PresentationGeometry.DamageAxisScale(Vector3.up, criticalFit) - criticalFit.y) < .00001f, "Native critical mesh vertical axis receives vertical fit");
+        Check(PresentationGeometry.DamageSpriteBounds(new Vector3(.01f, -.015f, .1f), new Vector2(.02f, .03f), 20, out var nativeCrack), "Native white crack can move to comfortable depth");
+        Check(Math.Abs(nativeCrack.width / 20 - .02f / .1f) < .00001f && Math.Abs(nativeCrack.height / 20 - .03f / .1f) < .00001f, "White crack preserves original angular size independently of XR FOV");
+        Check(Math.Abs(nativeCrack.center.x / 20 - .01f / .1f) < .00001f && Math.Abs(nativeCrack.center.y / 20 + .015f / .1f) < .00001f, "White crack retains native offset about head forward, not asymmetric coverage center");
+        Check(PresentationGeometry.DamageSpriteBounds(new Vector3(.01f, -.015f, .1f), new Vector2(.02f, .03f), 10, out var closerCrack) && Math.Abs(closerCrack.width * 2 - nativeCrack.width) < .00001f, "Changing visual depth alone cannot enlarge white cracks");
+        Check(!PresentationGeometry.DamageSpriteBounds(new Vector3(0, 0, -1), Vector2.one, 20, out _), "Behind-camera damage is rejected");
+        Check(!PresentationGeometry.DamageSpriteBounds(new Vector3(float.NaN, 0, 1), Vector2.one, 20, out _), "Invalid native damage position cannot break presentation");
+        var leftEye = Matrix4x4.identity; leftEye.m22 = -1; leftEye.m03 = -.032f;
+        var rightEye = leftEye; rightEye.m03 = .032f;
+        var projection = Matrix4x4.identity; projection.m32 = -1; projection.m33 = 0;
+        var leftProjection = projection; leftProjection.m02 = -.2f; leftProjection.m12 = -.1f;
+        var rightProjection = projection; rightProjection.m02 = .3f; rightProjection.m12 = .2f;
+        Check(PresentationGeometry.DamageProjectionPoint(leftProjection, leftEye, new Vector2(-1, 1), 1.15f, out var leftCorner), "Left XR render projection intersects common damage plane");
+        Check(Math.Abs(leftCorner.x - (-1.412f)) < .00001f && Math.Abs(leftCorner.y - 1.035f) < .00001f, "Damage coverage retains asymmetric projection and left eye translation");
+        Check(PresentationGeometry.DamageProjectionPoint(rightProjection, rightEye, new Vector2(1, -1), 1.15f, out var rightCorner), "Right XR render projection intersects common damage plane");
+        Check(Math.Abs(rightCorner.x - 1.527f) < .00001f && Math.Abs(rightCorner.y + .92f) < .00001f, "Right coverage uses its own frustum and eye translation without mirroring");
+        leftEye.m23 = .15f;
+        Check(PresentationGeometry.DamageProjectionPoint(projection, leftEye, Vector2.one, 1.15f, out var shifted) && Math.Abs(shifted.x - .968f) < .00001f, "Eye depth offset intersects the shared head plane rather than parallel eye planes");
+        Check(!PresentationGeometry.DamageProjectionPoint(projection, Matrix4x4.identity, Vector2.one, 1.15f, out _), "Backward eye ray cannot produce invalid coverage");
+        Check(!PresentationGeometry.DamageProjectionPoint(projection, rightEye, new Vector2(float.NaN, 1), 1.15f, out _), "Non-finite XR corner is rejected");
+        Check(!PresentationGeometry.DamageProjectionPoint(Matrix4x4.zero, rightEye, Vector2.one, 20, out _), "Absent XR projection cannot poison coverage");
+        Check(!PresentationGeometry.DamageProjectionPoint(Matrix4x4.identity, rightEye, Vector2.one, 20, out _), "Identity placeholder is not treated as a perspective eye projection");
+        Check(PresentationGeometry.DamageProjectionPoint(rightProjection, rightEye, new Vector2(1, -1), 20, out var farCorner) && Math.Abs(farCorner.x - 26.032f) < .0001f && Math.Abs(farCorner.y + 16) < .0001f, "Valid XR data works after missing data and scales to far damage depth");
+        var cantedEye = Matrix4x4.identity;
+        cantedEye.m00 = .8f; cantedEye.m02 = -.6f; cantedEye.m20 = -.6f; cantedEye.m22 = -.8f;
+        Check(PresentationGeometry.DamageProjectionPoint(projection, cantedEye, new Vector2(1, 0), 20, out var cantedCorner) && Math.Abs(cantedCorner.x - 140) < .001f, "Canted eye coverage intersects the head plane instead of assuming parallel eye views");
         var curveCache = new HudCurveCache();
         var relative = Matrix4x4.identity;
         var pixelScale = new Vector3(.001f, .001f, .001f);
@@ -163,6 +195,12 @@ internal static class Program
 
     private static void Main()
     {
+        try { Run(); }
+        catch (Exception error) { Console.Error.WriteLine(error); Environment.ExitCode = 1; }
+    }
+    private static void Run()
+    {
+        LegacyJoystickChecks.Run(Check);
         CheckSplitGamepad();
         CheckHudPatchTargets();
         CheckPresentation();

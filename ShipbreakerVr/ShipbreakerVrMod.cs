@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace ShipbreakerVr;
 
-[BepInPlugin("ShipbreakerVr", "ShipbreakerVr", "0.4.27")]
+[BepInPlugin("ShipbreakerVr", "ShipbreakerVr", "0.4.32")]
 public class ShipbreakerVrMod : BaseUnityPlugin
 {
     internal static ConfigEntry<float> DebugRayLength;
@@ -35,9 +35,10 @@ public class ShipbreakerVrMod : BaseUnityPlugin
         VrHudCurve.Configure(Config);
         VrRoomMarkers.Configure(Config);
         VrHaptics.Configure(Config);
+        Debug.Log("[ShipbreakerVr] Legacy joystick bounds protection installed=" + LegacyJoystickSafety.Install());
         var corePatches = new Harmony("ShipbreakerVr.Core");
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
-            if (type != typeof(HudMeshCapturePatches) && type != typeof(RoomMarkerPatches) && type != typeof(HapticEventPatches)) corePatches.CreateClassProcessor(type).Patch();
+            if (type != typeof(HudMeshCapturePatches) && type != typeof(RoomMarkerPatches) && type != typeof(HapticEventPatches) && type != typeof(HelmetDamagePatches) && type != typeof(LegacyJoystickSafety)) corePatches.CreateClassProcessor(type).Patch();
 
         gameObject.AddComponent<ModXrManager>();
         gameObject.AddComponent<VrCameraSubmission>();
@@ -48,6 +49,7 @@ public class ShipbreakerVrMod : BaseUnityPlugin
         gameObject.AddComponent<VrGrappleControls>();
         gameObject.AddComponent<VrAdditionalToolControls>();
         gameObject.AddComponent<VrAvatarVisuals>();
+        gameObject.AddComponent<VrHelmetDamage>();
         gameObject.AddComponent<VrRoomMarkers>();
         gameObject.AddComponent<VrHaptics>();
         performanceCapture = new VrPerformanceCapture(Config);
@@ -55,6 +57,7 @@ public class ShipbreakerVrMod : BaseUnityPlugin
         HudMeshCapturePatches.InstallOptional();
         RoomMarkerPatches.InstallOptional();
         HapticEventPatches.InstallOptional();
+        HelmetDamagePatches.InstallOptional();
     }
 
     private void Update()

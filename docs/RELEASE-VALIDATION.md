@@ -1,3 +1,16 @@
+# Portable 0.4.32-beta1 validation — 2026-10-01
+
+- User accepted the 0.4.32 damage presentation after headset testing; input and repair were also confirmed during the preceding iterations. This is not a recorded pass of every regression on every supported headset.
+- Built from a separate 252-file source snapshot. Locked NuGet restore into a new package cache from the previously verified offline feed succeeded. Release builds had zero warnings/errors; all **388 managed checks passed**. No new Unity import was necessary: Unity project, packages and exports are unchanged from the verified baseline.
+- Packaged the accepted test binary. Independent byte comparison of every payload against its original input confirms that the only changes are CodeView directory-path removal in 12 unsigned DLLs. Executable code, resources and assembly identities are preserved.
+- **35 installer integration checks** and **21 full-package checks** passed under Windows PowerShell 5.1, including extracted ZIP integrity, fresh install/reinstall/uninstall and legacy upgrade/restoration with settings retained.
+- ZIP: `ShipbreakerVR-0.4.32-beta1-portable.zip`; 35 payload files, 64 ZIP files. SHA-256: `225EDF49B12B844BE06742F1C269CF4F2571C65DA0A46D0567E9A53AC8CD63F8`.
+- All 252 source candidate files and all ZIP files were checked for local account/computer/workspace identifiers and selected credential patterns. Both UnityFS bundles were decompressed and checked. No matches remained. Runtime licences and upstream attribution are retained. This is a bounded audit, not a guarantee against every conceivable encoding.
+- The public installer correctly rejects a local test DLL that differs from an active installation record. That protection is retained. Machine-specific transition tooling stays outside the public source/package.
+- No live game files, remote branches, tags or release pages were changed by this preparation. The final ZIP has not had a separate live installation/headset run; the included executable code is the accepted test code. Other headsets and the unconfirmed scanner stereo report remain outside this validation.
+
+Historical validation follows. Statements about older versions being unpublished describe their status at the time.
+
 # Portable 0.4.27 beta validation
 
 Prepared 2026-09-26. This is a packaging/diagnostic cleanup of the accepted 0.4.26 gameplay baseline. Tool alignment, HUD geometry, motion/menu bindings and haptics are unchanged. The additional-tool config description now distinguishes Pico triggers from Frame scanner bumpers.

@@ -75,6 +75,7 @@ public class VrUi : MonoBehaviour
         if (!canvas || !canvas.isRootCanvas || canvas.renderMode == RenderMode.WorldSpace) return;
         var id = canvas.GetInstanceID();
         if (Controllers.TryGetValue(id, out var existing) && existing) return;
+        VrHelmetDamage.RegisterCanvas(canvas);
         // The game converts canvas GameObjects into Entities. Adding an unknown mod
         // component to those objects makes that conversion throw; own the behaviour separately.
         var host = new GameObject("ShipbreakerVr UI follower");
