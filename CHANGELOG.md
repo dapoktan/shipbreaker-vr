@@ -4,7 +4,6 @@
 
 - Apply the settling delay only when the same selected tool returns from being stowed for a grab or interaction. Ordinary tool selection no longer adds a minimum visibility delay. Retain synchronized heat-bar hiding and the guard against tools rising from the feet after interactions.
 - Hide cutter heat-bar and tool-child UI graphics with the tool mesh; restore native opacity when visible. Includes the couch/gamepad support and shared tool presentation listed under 0.4.42 below. The final 0.4.44 gameplay test was accepted; the release preserves its binary.
-- Document the high-supersampling loading failure reproduced in both 0.4.41 and 0.4.42, with loading successful at a lower resolution. No VRAM/performance fix is claimed.
 
 ## 0.4.43 — cutter heat-bar visibility (test build)
 

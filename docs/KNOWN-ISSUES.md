@@ -16,7 +16,6 @@ The mod depends on internal Mono/Harmony interfaces and pinned Unity/OpenXR pack
 
 UI caching reduced measured mod work, and smoothness on High was reported during development. This is not a promise of native headset refresh or a particular frame rate. CPU/GPU, scene, resolution, reprojection and streaming all matter. Automatic captures are off; F9 is available for diagnosis. The installer does not change SteamVR or game graphics settings.
 
-Free Play loading failed at SteamVR 500% (4828 × 4828 per eye) on the tested system, with repeated D3D11 out-of-memory allocation errors in a failed launch. The previously accepted 0.4.41 build also failed at 500% and loaded at 200%. Lower supersampling is a workaround, not a proven fix for the underlying cause; these percentages are not universal safe limits. No new large render targets/textures were found in the .32-to-.44 changes, but no controlled VRAM comparison or leak investigation has been completed.
 
 ## Portable-package smoke test
 
