@@ -1,4 +1,22 @@
-# Controls — 0.4.27 beta
+# Controls — 0.4.42 beta1
+
+## Traditional gamepad / couch play
+
+In the default gamepad layout, RB is right-hand grab (LB is left-hand grab). During scanning these buttons change scanner mode; in menus they change tabs. Temporarily stowed tools are hidden during grabs and door/console interactions. Cutter/grapple rendering resumes after their native return motion settles. In-game binding changes still apply.
+
+VR can use an Xbox-style gamepad, or a Steam Controller presented to the game as a gamepad through Steam Input. Use a standard gamepad layout in Steam Input; keyboard/mouse-only mappings do not identify a gamepad for automatic switching. The development gamepad test was accepted; other device/layout combinations still need validation.
+
+The default `[Input] Mode = Auto` switches to couch play when you press a gamepad button or deliberately move a stick (past roughly half travel). Release buttons/triggers and center sticks once after switching. The game then receives its original controller bindings, including movement, tool selection, triggers, scanner, menus, bumpers and pause. Existing in-game remaps are retained; consult the game's bindings screen for the native layout.
+
+Couch aim follows the game's body/camera direction, controlled by the right stick. Headset movement lets you look around independently. Tools use their original body-relative animation and muzzle placement, with the same reduced mesh sizes as motion mode (65% of native size for every held tool by default). The world-space tool endpoint follows that native aim; the head-following HUD is not the aiming reference. The curved HUD, menus, loading screens, scanner labels, helmet damage and other VR rendering fixes remain active. Native gamepad vibration is retained; idle motion controllers do not receive the mod's XR haptics.
+
+To return to motion controls, press a tracked controller button/trigger or deliberately move its stick, then release controls once. Head/hand movement, idle tracking and stick drift do not switch modes. Mode changes cancel an active Stinger cut, grapple/tether placement and tool-wheel selection; start the action again after the handoff. Connecting/reconnecting with controls held requires releasing and pressing again.
+
+For a fixed preference, close the game and set `Mode = Gamepad` or `Mode = MotionControllers` in the `[Input]` section of `BepInEx/config/ShipbreakerVr.cfg`. `Auto` restores switching. These choices do not toggle VR or change HUD settings. Simultaneous tracked input takes precedence over a Steam Input gamepad echo; use the fixed choice if a streaming setup duplicates controller input.
+
+With `Presentation.ToolRangeGuides` enabled, couch aiming uses a ring at the target or tool-range endpoint. White means a surface was hit; orange means the range endpoint. It does not guarantee a valid target. The marker is a world-space UI ring above the ordinary HUD. It retains readable angular size and stays inside camera clipping limits without changing the targeting ray or range. Tool meshes and textures are the game's originals. The shared `[Avatar] ToolVisualScale = 0.65` applies to the cutter, grapple, held charge and detonator in both input modes. The old `GrappleVisualScale` key is ignored. This means 65% of native size (35% smaller), preserving model proportions; separate native shadow copies remain shadow-only. Placed/thrown charges and wall previews retain their gameplay size.
+
+The layouts below apply to **motion-controller mode**.
 
 The active layout follows controller capabilities. Steam Frame exposes the native split gamepad layout; Pico uses the compact VR layout. Begin with both controllers tracked, sticks centered and buttons released. Release triggers after changing tools, tracking recovery or resuming.
 

@@ -33,11 +33,11 @@ try {
         'Plugins/x86_64/UnityOpenXR.dll','Plugins/x86_64/openxr_loader.dll','UnitySubsystems/UnityOpenXR/UnitySubsystemsManifest.json')) {
         if (!(Test-Path -LiteralPath "$player/$file")) { throw "Missing Unity build output: $file" }
     }
-    $restoreArgs = @('restore', 'ShipbreakerVr.sln', '--locked-mode', '--configfile', "$repoRoot/NuGet.Config")
+    $restoreArgs = @('restore', 'ShipbreakerVr.sln', '--locked-mode', '--configfile', "$repoRoot/NuGet.Config", '-m:1', '-nodeReuse:false')
     if ($NuGetSource) { $restoreArgs += @('--source', $NuGetSource) }
     & $DotNet @restoreArgs
     if ($LASTEXITCODE -ne 0) { throw 'Package restore failed.' }
-    & $DotNet build ShipbreakerVr.sln --no-restore -c $Configuration "-p:GameDir=$GameDir" "-p:UnityProjectDir=$UnityProjectDir"
+    & $DotNet build ShipbreakerVr.sln --no-restore -m:1 -nodeReuse:false -p:UseSharedCompilation=false -c $Configuration "-p:GameDir=$GameDir" "-p:UnityProjectDir=$UnityProjectDir"
     if ($LASTEXITCODE -ne 0) { throw 'Mod build failed.' }
     $stage = "$artifacts/$Configuration/Mod"
     $nativeStage = "$stage/BepInEx/patchers/ShipbreakerVrPatcher/CopyToGame/Shipbreaker_Data"

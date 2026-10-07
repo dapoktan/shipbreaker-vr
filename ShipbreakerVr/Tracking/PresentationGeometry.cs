@@ -6,6 +6,23 @@ namespace ShipbreakerVr.Tracking;
 
 public static class PresentationGeometry
 {
+    // Radius and stroke are proportional to eye distance, preserving apparent
+    // size at a surface or the live grapple range. No gameplay range is changed.
+    public static Vector2 CouchMarkerSize(float eyeDistance) =>
+        new Vector2(Math.Max(.006f, eyeDistance * .004f), Math.Max(.0015f, eyeDistance * .0009f));
+
+    // Keep the aim bearing when an endpoint is outside the headset camera's clip
+    // range. This moves only the marker, never the raycast or tool reach.
+    public static Vector3 CouchMarkerPosition(Vector3 eye, Vector3 target, float nearClip, float farClip)
+    {
+        var offset = target - eye;
+        var distance = offset.magnitude;
+        if (distance < .00001f) return target;
+        var minimum = Math.Max(.3f, nearClip * 2f);
+        var maximum = Math.Max(minimum, farClip * .8f);
+        return eye + offset * (Math.Max(minimum, Math.Min(maximum, distance)) / distance);
+    }
+
     public static bool IsCriticalHelmetEffect(string name) => name != null && name.StartsWith("FX_ShatteredGlass_Helmet_01", StringComparison.Ordinal);
     public static Vector2 CriticalHelmetFit(Vector2 nativeSize, float nativeDepth, Rect eyeBounds, float planeDistance)
     {

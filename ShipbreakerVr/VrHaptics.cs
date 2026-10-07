@@ -23,10 +23,11 @@ internal sealed class VrHaptics : MonoBehaviour
         enabledSetting = config.Bind("Haptics", "Enabled", true, "Tool vibration through standard XR controller haptics. Also respects the game's vibration setting.");
         strength = config.Bind("Haptics", "Strength", .5f, new ConfigDescription("Overall VR vibration strength; 0 disables output.", new AcceptableValueRange<float>(0, 1)));
     }
-    private bool Eligible => !failed && enabledSetting.Value && strength.Value > 0 && ModXrManager.IsVrEnabled &&
+    private bool Eligible => !failed && enabledSetting.Value && strength.Value > 0 && VrInputMode.MotionActive &&
         Application.isFocused && GameSession.CurrentGameState == GameSession.GameState.Gameplay &&
         !EquipmentController.ToolMenuOpen && !VrMenuControls.PauseInputConsumed;
     private void Awake() => instance = this;
+    internal static void InputOwnerChanged() { if (instance) instance.Stop(); }
     internal static void Pulse(bool leftHand, float amplitude, float duration)
     {
         if (instance && instance.Eligible) (leftHand ? instance.left : instance.right).Queue(amplitude, duration, Time.unscaledTime);

@@ -32,6 +32,7 @@ internal sealed class VrMenuControls : MonoBehaviour
     private MenuDevice device;
     private PlayerActionSet pinnedActions;
     private InputDevice previousActionDevice;
+    private InputDevice assignedActionDevice;
     private bool canRoute;
     private MenuInput routed;
     private ControllerInputs rawLeft, rawRight;
@@ -63,10 +64,12 @@ internal sealed class VrMenuControls : MonoBehaviour
         misc2 = config.Bind("Menus", "MenuX", VrButton.LeftPrimary, "Menus: contextual Xbox X / defaults (Pico X).");
     }
 
-    private bool Eligible => isActiveAndEnabled && enabledSetting.Value && !failed && ModXrManager.IsVrEnabled && !ModXrManager.ToggleInputConsumed &&
+    private bool Eligible => isActiveAndEnabled && enabledSetting.Value && !failed && VrInputMode.MotionActive && !ModXrManager.ToggleInputConsumed &&
         Application.isFocused && LynxControls.Instance && LynxControls.Instance.IsGameFocused;
 
-    internal static bool ControllerNavigationActive => instance && instance.Eligible && instance.canRoute &&
+    internal static bool VerboseInputEnabled => verboseInput != null && verboseInput.Value;
+
+    internal static bool ControllerNavigationActive => (VrInputMode.CouchActive || (instance && instance.Eligible && instance.canRoute)) &&
         (GameSession.CurrentGameState != GameSession.GameState.Gameplay || EquipmentController.ToolMenuOpen);
 
     // Head movement changes screen-to-world mouse hover even when the physical
@@ -94,7 +97,7 @@ internal sealed class VrMenuControls : MonoBehaviour
     private void ResetInput()
     {
         canRoute = false;
-        ReleaseActionDevice();
+        if (ReferenceEquals(assignedActionDevice, device)) ReleaseActionDevice();
         gate.Sample((int)GameSession.CurrentGameState, false, Vector2.zero, Vector2.zero, false, deadzone.Value);
         cancelWheel |= wheelOwned;
         pauseChord.Sample(false, false, false);
@@ -198,6 +201,7 @@ internal sealed class VrMenuControls : MonoBehaviour
     {
         InputManager.OnUpdate -= ReportInput;
         ResetInput();
+        ReleaseActionDevice();
         // Neutral device stays attached during VR toggles; no unplug dialog.
     }
     private void OnDestroy()
@@ -208,26 +212,58 @@ internal sealed class VrMenuControls : MonoBehaviour
 
     private void ReleaseActionDevice()
     {
-        if (pinnedActions != null && ReferenceEquals(pinnedActions.Device, device))
+        if (pinnedActions != null && ReferenceEquals(pinnedActions.Device, assignedActionDevice))
             pinnedActions.Device = previousActionDevice;
         pinnedActions = null;
         previousActionDevice = null;
+        assignedActionDevice = null;
+    }
+
+    internal static bool IsVirtualDevice(InputDevice value) => instance && ReferenceEquals(instance.device, value);
+    internal static void InputOwnerChanged()
+    {
+        if (!instance) return;
+        // Cancel the wheel before releasing its held action: a synthetic release
+        // must not equip a different tool during a mode change.
+        if (EquipmentController.ToolMenuOpen && VrToolPresentation.Equipment)
+            closeWheel.Invoke(VrToolPresentation.Equipment, new object[] { true });
+        instance.pinnedActions?.ClearInputState();
+        instance.ResetInput();
+        instance.device?.ClearInputState();
+    }
+    internal static void RefreshInputOwner()
+    {
+        if (!instance) return;
+        if (!VrInputMode.MotionActive)
+        {
+            instance.ResetInput();
+            instance.device?.ClearInputState();
+        }
+        if (instance.device != null) instance.device.Passive = !instance.Eligible || !instance.canRoute;
+        instance.BindActionDevice();
     }
 
     private void BindActionDevice()
     {
+        // Native pads already flow through InputManager.ActiveDevice. Only the
+        // synthetic motion pad needs a pinned action source. Let native context
+        // changes (interactions, doors, pause) manage their action sets normally.
+        if (VrInputMode.CouchActive) { ReleaseActionDevice(); return; }
         var state = GameSession.CurrentGameState;
         var type = state == GameSession.GameState.Gameplay ? LynxControls.PlayerActionSetTypes.GameplayActions :
             state == GameSession.GameState.Paused ? LynxControls.PlayerActionSetTypes.PausedActions :
             state == GameSession.GameState.NIS ? LynxControls.PlayerActionSetTypes.NISActions : LynxControls.PlayerActionSetTypes.FEActions;
+        var target = device;
         var actions = canRoute && LynxControls.Instance ? LynxControls.Instance.TryGetLoadedActionSet(type) : null;
-        if (ReferenceEquals(actions, pinnedActions)) return;
+        if (ReferenceEquals(actions, pinnedActions) && ReferenceEquals(target, assignedActionDevice) &&
+            (actions == null || ReferenceEquals(actions.Device, target))) return;
         ReleaseActionDevice();
         if (actions == null) return;
         pinnedActions = actions;
         previousActionDevice = actions.Device;
-        actions.Device = device;
-        Debug.Log($"[ShipbreakerVr] Menu action source: {type} explicitly uses VR pad; prior={(previousActionDevice == null ? "automatic" : previousActionDevice.Name)}; enabled={actions.Enabled}");
+        assignedActionDevice = target;
+        actions.Device = target;
+        Debug.Log($"[ShipbreakerVr] Menu action source: {type} uses {target?.Name}; enabled={actions.Enabled}");
     }
 
     // Observe AFTER the native device commit and PlayerAction update, not just pose readiness.

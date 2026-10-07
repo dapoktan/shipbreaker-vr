@@ -55,7 +55,7 @@ internal static class DemoChargeAimPatches
             velocity.Direction = item.Direction;
             manager.SetComponentData(entity, velocity);
             pending.RemoveAt(i);
-            Debug.Log("[ShipbreakerVr] Demo charge launch uses captured controller direction.");
+            Debug.Log("[ShipbreakerVr] Demo charge launch uses captured VR aim direction.");
         }
     }
 }

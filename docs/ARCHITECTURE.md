@@ -1,7 +1,16 @@
-# Shipbreaker VR architecture and milestone 0.1
+# Shipbreaker VR architecture
 
-Baseline: Raicuparta/shipbreaker-vr commit `0c13a9997b9725d699092688d51277f4bc9b0211`.
-This is modernization milestone **0.1**, built on upstream mod **0.3.0**; the candidate assembly version is **0.4.10**.
+Based on Raicuparta/shipbreaker-vr commit `0c13a9997b9725d699092688d51277f4bc9b0211`. Current release: **0.4.42 beta1**. Earlier sections describe their original milestone and are retained as historical design context.
+
+## 0.4.42 input ownership and presentation
+
+`VrInputMode` samples native InControl devices and tracked controller activity before PlayerActions consume the tick. `Tracking/InputModeSelection` ignores poses, first-seen held controls and drift, and prioritizes near-simultaneous motion input over gamepad echoes. Each handoff cancels owned tool/menu actions and requires neutral controls. `NativeGamepadRouting` suppresses native input only until that neutral gate is armed; normal InControl device selection then resumes.
+
+Couch mode releases the synthetic motion pad's action-set ownership. Tool adapters fall back to native inputs/aim; headset look remains independent of body/right-stick aim. XR haptics stop for idle tracked controllers while native gamepad vibration remains game-owned. Fixed input preferences are available.
+
+`VrCouchReticle` renders a raycast endpoint as a world-space UI ring with no raycaster/input component. Its angular size and clipping adjustments are presentation only. `VrAvatarVisuals` preserves native couch placement, shares ToolVisualScale across all held tools, and hides unequipped models based on equipment and hand state. `ToolReturnVisibility` waits for native root motion to settle before revealing a returning cutter/grapple, then latches visibility through normal shake. All pose/visibility overrides restore before native gameplay updates. `VrHandPropVisuals` scales only copied held charge/detonator geometry; native bones, deployed charges and surface previews stay game-owned.
+
+Temporary interaction tracing is removed from release builds. Detailed motion/gamepad input logging is opt-in under Diagnostics.VerboseMenuInput. HUD, scanner, loading and helmet presentation follow the established 0.4.32 baseline.
 
 ## 0.4.10 startup boundary
 

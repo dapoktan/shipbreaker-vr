@@ -17,7 +17,7 @@ internal sealed class VrStingerControls : MonoBehaviour
     private bool valid;
     private string lastStatus;
 
-    private bool ControlsStinger => ShipbreakerVrMod.StingerMotionControls.Value && ModXrManager.IsVrEnabled &&
+    private bool ControlsStinger => ShipbreakerVrMod.StingerMotionControls.Value && VrInputMode.MotionActive &&
         tool && tool.CurrentMode == CuttingToolController.CutterMode.Scalpel && tool.EquipementController &&
         tool.EquipementController.CurrentEquipment == EquipmentController.Equipment.CuttingTool;
 
@@ -53,6 +53,7 @@ internal sealed class VrStingerControls : MonoBehaviour
 
     private void Sample()
     {
+        if (!ControlsStinger) { valid = false; trigger.Sample(false, 0f); return; }
         if (sampledFrame == Time.frameCount) return;
         sampledFrame = Time.frameCount;
         valid = false;
@@ -132,6 +133,13 @@ internal sealed class VrStingerControls : MonoBehaviour
         bridge = null;
         if (tool && tool.CurrentMode == CuttingToolController.CutterMode.Scalpel && tool.State == CuttingState.Cutting)
             tool.SetState(CuttingState.Ready);
+    }
+
+    internal static void InputOwnerChanged()
+    {
+        if (!instance) return;
+        instance.OnDisable();
+        instance.sampledFrame = -1;
     }
 
     private void OnDestroy() { if (instance == this) instance = null; }

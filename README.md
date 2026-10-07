@@ -1,4 +1,4 @@
-# Shipbreaker VR — 0.4.32 beta1
+# Shipbreaker VR — 0.4.42 beta1
 
 An unofficial Windows PCVR mod for **Hardspace: Shipbreaker**, based on [Raicuparta/shipbreaker-vr](https://github.com/Raicuparta/shipbreaker-vr). Uses OpenXR for headset/controller tracking and game-specific adapters for tools, movement and menus.
 
@@ -14,11 +14,13 @@ Tested during development with Pico Neo 3 over Steam Link and Steam Frame throug
 
 No Unity editor, developer SDK, separate BepInEx installation or mod manager is needed. Setup does not change SteamVR resolution, game graphics settings or saves. Existing mod settings are preserved; obsolete test keys are removed with a backup. Fresh settings use the accepted HUD/tool calibration, controller navigation and haptics. Automatic performance recording is off.
 
-**Controls:** [Pico and Frame guide](docs/CONTROLS.md). F3 toggles VR/desktop. The controller gesture also works after OpenXR connects: center both sticks, press both stick clicks first, add both full grips and hold all four for two seconds, then release.
+**Controls:** [Gamepad, Pico and Frame guide](docs/CONTROLS.md). F3 toggles VR/desktop. The controller gesture also works after OpenXR connects: center both sticks, press both stick clicks first, add both full grips and hold all four for two seconds, then release.
 
 ## What's included
 
 - Tracked controller tool aim, movement, tool selection, menus and haptics.
+- Automatic couch/gamepad mode with native bindings, right-stick aiming, independent head looking and visible aiming rings.
+- Consistent 65%-size held tools in both modes, hidden while stowed and during their return movement.
 - Disembodied tools with calibrated beam origins; stock tool range and game rules.
 - Head-following curved gameplay HUD, loading/menu composition and clipped ship cards.
 - Structural scanner room labels and pressure indicators.
@@ -48,6 +50,6 @@ The scripts are unsigned. The ZIP SHA-256 detects accidental corruption; it is n
 
 See [known issues and test checklist](docs/KNOWN-ISSUES.md). Close the game before sharing `BepInEx/LogOutput.log`; review it for local paths/system details first. F7 records UI diagnostics. F9 starts/stops an optional timing capture; reports are written under `BepInEx`.
 
-This beta adds accepted helmet-damage presentation fixes and legacy joystick bounds protection to the 0.4.27-beta2 baseline. The user tested the 0.4.32 mod in headset; final ZIP installation and regression checks are validated separately. Other headset/runtime combinations remain unverified. Scanner rendering and controller bindings are unchanged in this update.
+This beta adds couch/gamepad play and tool presentation improvements to the 0.4.32-beta1 baseline. The user accepted the final 0.4.41 gameplay test, including doors/consoles and tool return behavior. Version 0.4.42 removes temporary diagnostics and prepares the portable release. The final ZIP is validated separately from headset gameplay; see docs/RELEASE-VALIDATION.md in the source repository. Other headset/runtime and Steam Input layout combinations remain unverified.
 
 Source build instructions: [BUILD.md](docs/BUILD.md). Architecture and file inventory are in the source repository's `docs` folder. Mod source retains the upstream MIT license; bundled runtime notices are in [THIRD-PARTY.md](THIRD-PARTY.md) and `licenses`.

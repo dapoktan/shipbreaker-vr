@@ -13,6 +13,32 @@ internal static class Program
 
     private static void CheckPresentation()
     {
+        var returning = new ToolReturnVisibility();
+        Check(!returning.Sample(false, true, .05f), "Stowed tool remains invisible even at a stationary rest point");
+        for (var i = 0; i < 20; i++) returning.Sample(true, false, .05f);
+        Check(!returning.Sample(true, false, .05f), "An equipped tool still rising from the feet is not revealed by elapsed time alone");
+        returning.Sample(true, true, .05f);
+        Check(!returning.Sample(true, true, .05f), "A briefly stationary return pose does not reveal the tool");
+        Check(returning.Sample(true, true, .05f), "Settled equipped tool becomes visible");
+        Check(returning.Sample(true, false, .05f), "Normal shake after return does not flicker the tool");
+        Check(!returning.Sample(false, true, .05f), "A second grab immediately hides and resets the tool");
+        Check(!returning.Sample(true, true, 1f), "A hitch cannot skip the return gate");
+        Check(!returning.Sample(true, true, 0f), "Paused animation cannot finish the return gate");
+        Check(!returning.Sample(true, true, float.NaN), "Invalid frame time cannot reveal the tool");
+        var nearAim = PresentationGeometry.CouchMarkerSize(3);
+        var farAim = PresentationGeometry.CouchMarkerSize(200);
+        Check(Math.Abs(nearAim.x / 3 - farAim.x / 200) < .00001f, "Couch aiming ring retains angular radius at 200 m grapple range");
+        Check(Math.Abs(nearAim.y / 3 - farAim.y / 200) < .00001f, "Couch aiming stroke stays readable at 200 m instead of shrinking to a fixed 3 mm");
+        var closeAim = PresentationGeometry.CouchMarkerSize(.1f);
+        Check(closeAim.x >= .006f && closeAim.y >= .0015f, "Very close target retains a usable minimum aim marker");
+        var eye = new Vector3(10, 20, 30);
+        var target = eye + new Vector3(30, 0, 200);
+        var clippedAim = PresentationGeometry.CouchMarkerPosition(eye, target, .03f, 100);
+        Check((clippedAim - eye).magnitude < 100 && Vector3.Dot((clippedAim - eye).normalized, (target - eye).normalized) > .9999f, "Reticle beyond camera far clip stays visible without changing its aim bearing");
+        var closeTarget = eye + Vector3.forward * .1f;
+        Check((PresentationGeometry.CouchMarkerPosition(eye, closeTarget, .2f, 100) - eye).magnitude > .2f, "Near target cannot put couch reticle inside camera near clip");
+        var visibleTarget = eye + Vector3.forward * 10;
+        Check((PresentationGeometry.CouchMarkerPosition(eye, visibleTarget, .03f, 100) - visibleTarget).sqrMagnitude < .00001f, "Visible target retains its real stereo depth");
         Check(PresentationGeometry.IsCriticalHelmetEffect("FX_ShatteredGlass_Helmet_01(Clone)"), "Actual critical red helmet prefab uses critical fitting");
         Check(!PresentationGeometry.IsCriticalHelmetEffect("FX_VisorCrack(Clone)"), "Larger white quad must not receive critical red enlargement");
         Check(!PresentationGeometry.IsCriticalHelmetEffect("FX_VisorCrack_Small_04(Clone)"), "Small white cracks retain native size");
@@ -201,6 +227,7 @@ internal static class Program
     private static void Run()
     {
         LegacyJoystickChecks.Run(Check);
+        InputModeChecks.Run(Check);
         CheckSplitGamepad();
         CheckHudPatchTargets();
         CheckPresentation();

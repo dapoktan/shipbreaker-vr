@@ -37,13 +37,17 @@ internal sealed class VrMovementControls : MonoBehaviour
         brakeExtra = config.Bind("Movement", "ExtraBrake", VrButton.None, "Optional additional single brake button, e.g. LeftGrip.");
     }
 
-    private static bool Enabled => instance && instance.isActiveAndEnabled && enabledSetting.Value && ModXrManager.IsVrEnabled;
+    private static bool Enabled => instance && instance.isActiveAndEnabled && enabledSetting.Value && VrInputMode.MotionActive;
     private static bool ContextAllowed => Enabled && GameSession.CurrentGameState == GameSession.GameState.Gameplay &&
         !EquipmentController.ToolMenuOpen && !VrMenuControls.PauseInputConsumed && Application.isFocused && LynxControls.Instance && LynxControls.Instance.IsGameFocused &&
         LynxControls.Instance.TryGetLoadedActionSet(LynxControls.PlayerActionSetTypes.GameplayActions)?.Enabled == true &&
         VrCamera.ViewCamera && VrCamera.ViewCamera.isActiveAndEnabled;
 
     private void Awake() => instance = this;
+    internal static void InputOwnerChanged()
+    {
+        if (instance) { instance.ResetInput(); instance.sampledFrame = -1; }
+    }
     private void Update() { if (!ContextAllowed) ResetInput(); }
 
     private void ResetInput()

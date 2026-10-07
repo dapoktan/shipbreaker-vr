@@ -1,3 +1,18 @@
+# Portable 0.4.42-beta1 validation — 2026-10-07
+
+- User accepted the final 0.4.41 gameplay test, including doors/consoles and tools returning without sliding up from the feet. Earlier iterations confirmed gamepad input, aiming reticles and shared 65% sizing. This is not an exhaustive test of every headset or Steam Input layout.
+- Version 0.4.42 removes the temporary interaction trace and makes detailed gamepad diagnostics opt-in. A normalized IL comparison against the accepted 0.4.41 DLL found **688 identical methods**; the four added/removed/changed method entries are diagnostic-only. No gameplay method changed during release cleanup.
+- Locked restores succeeded into new local NuGet caches using the verified offline feed. Both the working checkout and a separate 258-file source snapshot built Release with zero warnings/errors. The isolated build matched all **690 release method bodies**. The build wrapper now uses a single MSBuild node without compiler/node reuse; default reused workers failed restore in this environment.
+- **441 managed checks passed**, covering tracking, controls, handoff, reticle geometry and tool-return gating. Unity source/packages/exports are unchanged from the verified baseline; no new Unity import was performed or needed for these managed-code changes.
+- **33 installer integration checks** passed in a private restricted runner. Two junction-fixture checks could not run because the sandbox denied junction creation. The public test and installer junction-rejection code are unchanged, and these checks passed during prior release validation; they are not counted as rerun here.
+- **21 full-package checks passed** in Windows PowerShell 5.1: extraction/checksums, fresh and legacy install/reinstall/uninstall, payload verification, settings/save preservation and restoration. A separate copy of the active recorded installation validated the local test-to-public transition and preserved accepted tool/HUD settings. No live game files were changed.
+- Final ZIP: `ShipbreakerVR-0.4.42-beta1-portable.zip`; 35 payload files, 64 ZIP files. SHA-256: `CEC850419EC2DB08296DC37C070AC28ED9C6FC60260F54584E08C0708CCBB3E7`.
+- Source and all ZIP files were scanned for local account/computer/workspace identifiers and selected credential patterns, including decompression of both UnityFS bundles. No checked matches remained. Independent comparison to build inputs limited payload sanitization to debug-path regions in 12 unsigned DLLs. No game-managed DLLs, personal mod config, logs or test backups are packaged. This is a bounded audit, not proof against every possible encoding.
+- The release retains upstream attribution, MIT source licensing and bundled runtime notices. Source commit/tag and detailed audit records are recorded in the local publication handoff after committing. No remote push, tag publication, PR comment or release upload is part of this preparation.
+- The final cleaned portable ZIP has not had a separate live installation/headset session. Other runtimes, the unconfirmed scanner stereo report and Steam Controller hardware remain outside this validation.
+
+Historical validation follows.
+
 # Portable 0.4.32-beta1 validation — 2026-10-01
 
 - User accepted the 0.4.32 damage presentation after headset testing; input and repair were also confirmed during the preceding iterations. This is not a recorded pass of every regression on every supported headset.

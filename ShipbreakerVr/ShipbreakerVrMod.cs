@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace ShipbreakerVr;
 
-[BepInPlugin("ShipbreakerVr", "ShipbreakerVr", "0.4.32")]
+[BepInPlugin("ShipbreakerVr", "ShipbreakerVr", "0.4.42")]
 public class ShipbreakerVrMod : BaseUnityPlugin
 {
     internal static ConfigEntry<float> DebugRayLength;
@@ -24,6 +24,7 @@ public class ShipbreakerVrMod : BaseUnityPlugin
         StingerMotionControls = Config.Bind("Controllers", "StingerMotionControls", true,
             "Right-hand aim/trigger for the Stinger. Release trigger after equipping or recovering tracking. Grapple and other tool adapters have separate settings.");
 
+        VrInputMode.Configure(Config);
         VrMovementControls.Configure(Config);
         VrMenuControls.Configure(Config);
         VrGrappleControls.Configure(Config);
@@ -41,6 +42,7 @@ public class ShipbreakerVrMod : BaseUnityPlugin
             if (type != typeof(HudMeshCapturePatches) && type != typeof(RoomMarkerPatches) && type != typeof(HapticEventPatches) && type != typeof(HelmetDamagePatches) && type != typeof(LegacyJoystickSafety)) corePatches.CreateClassProcessor(type).Patch();
 
         gameObject.AddComponent<ModXrManager>();
+        gameObject.AddComponent<VrInputMode>();
         gameObject.AddComponent<VrCameraSubmission>();
         gameObject.AddComponent<ControllerDebugRays>();
         gameObject.AddComponent<VrStingerControls>();

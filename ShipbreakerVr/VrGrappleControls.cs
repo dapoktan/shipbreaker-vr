@@ -26,7 +26,7 @@ internal sealed class VrGrappleControls : MonoBehaviour
 
     internal static void Configure(ConfigFile config) => enabledSetting = config.Bind("Controllers", "GrappleMotionControls", true,
         "Right-hand grapple aim and hold-trigger grab; left trigger retracts an attached object. X remains native push. Empty grapple: left trigger holds a tether preview, release at its destination; D-pad down recalls.");
-    private bool Controls => enabledSetting.Value && ModXrManager.IsVrEnabled && hook && equipment && equipment.CurrentEquipment == EquipmentController.Equipment.GrappleHook;
+    private bool Controls => enabledSetting.Value && VrInputMode.MotionActive && hook && equipment && equipment.CurrentEquipment == EquipmentController.Equipment.GrappleHook;
     private bool Context => Controls && !failed && GameSession.CurrentGameState == GameSession.GameState.Gameplay &&
         Application.isFocused && LynxControls.Instance && LynxControls.Instance.IsGameFocused &&
         !EquipmentController.ToolMenuOpen && !VrMenuControls.PauseInputConsumed &&
@@ -125,7 +125,10 @@ internal sealed class VrGrappleControls : MonoBehaviour
         var camera = AimCamera();
         return camera ? camera.transform : LynxCameraController.MainCameraTransform;
     }
-    internal static Camera RaycastCamera(RaycastSystem system) => system is GrappleRaycastSystem || system is GrapplePushRaycastSystem ? AimCamera() : LynxCameraController.MainCamera;
+    internal static Camera RaycastCamera(RaycastSystem system)
+    {
+        return system is GrappleRaycastSystem || system is GrapplePushRaycastSystem ? AimCamera() : LynxCameraController.MainCamera;
+    }
     internal static bool Owns(LaserRope value)
     {
         if (instance) instance.Sample();
@@ -192,5 +195,13 @@ internal sealed class VrGrappleControls : MonoBehaviour
         return instance && instance.valid ? instance.aimCamera.transform : original;
     }
     private void OnDisable() => StopOwnedGrapple();
+    internal static void InputOwnerChanged()
+    {
+        if (!instance) return;
+        // Cancel an interaction from either source before its aim origin changes.
+        instance.owned = true;
+        instance.StopOwnedGrapple();
+        instance.sampledFrame = -1;
+    }
     private void OnDestroy() { if (instance == this) instance = null; }
 }

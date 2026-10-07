@@ -19,6 +19,7 @@ public sealed class ControllerDebugRays : MonoBehaviour
     private readonly RaycastHit[] hits = new RaycastHit[64];
     private string lastGuide;
     private Material material;
+    private readonly VrCouchReticle couchReticle = new VrCouchReticle();
     private MaterialPropertyBlock properties;
     private bool failed;
     private bool leftTracked;
@@ -38,6 +39,7 @@ public sealed class ControllerDebugRays : MonoBehaviour
     private void OnDestroy()
     {
         if (material) Destroy(material);
+        couchReticle.Dispose();
     }
 
     private void SampleAndDraw()
@@ -61,6 +63,19 @@ public sealed class ControllerDebugRays : MonoBehaviour
 
         try
         {
+            if (VrInputMode.CouchActive)
+            {
+                Hide();
+                inputBridge?.Dispose(); inputBridge = null;
+                var nativeCamera = LynxCameraController.MainCamera;
+                if (VrToolPresentation.ToolGuides.Value && nativeCamera &&
+                    VrToolPresentation.TryRange(out var couchRange, out var couchMask, out var couchTriggers, out var couchMode))
+                {
+                    DrawGuide(couchRange, couchMask, couchTriggers, couchMode, new Pose(nativeCamera.transform.position, nativeCamera.transform.rotation), false);
+                }
+                return;
+            }
+            couchReticle.Hide();
             if (inputBridge == null) inputBridge = new InputSystemUpdateBridge();
             inputBridge.UpdateIfNeeded();
             tracking.Sample();
@@ -157,6 +172,11 @@ public sealed class ControllerDebugRays : MonoBehaviour
     {
         var pose = ShipbreakerTrackingSpace.ToWorld(tracking.Head, tracking.RightHand.Aim,
             VrCamera.BodyTransform.position, VrCamera.BodyTransform.rotation, VrCamera.EyeOffset);
+        DrawGuide(range, mask, triggers, mode, pose, true);
+    }
+
+    private void DrawGuide(float range, int mask, QueryTriggerInteraction triggers, string mode, Pose pose, bool showBeam)
+    {
         var direction = pose.rotation * Vector3.forward;
         var count = Physics.RaycastNonAlloc(pose.position, direction, hits, range, mask, triggers);
         // A saturated buffer cannot guarantee the closest hit. Fall back only in that case.
@@ -173,6 +193,13 @@ public sealed class ControllerDebugRays : MonoBehaviour
         distance = PresentationGeometry.Endpoint(range, distance);
         var point = pose.position + direction * distance;
         var color = surface ? Color.white : new Color(1f, .5f, 0);
+        var status = mode + ": " + range.ToString("F2") + " m";
+        if (status != lastGuide) { lastGuide = status; Debug.Log("[ShipbreakerVr] Tool guide range: " + status); }
+        if (!showBeam)
+        {
+            couchReticle.Draw(transform, VrCamera.ViewCamera, point, color);
+            return;
+        }
         var layer = 0;
         while (layer < 31 && (VrCamera.ViewCamera.cullingMask & (1 << layer)) == 0) layer++;
         right.gameObject.layer = endpoint.gameObject.layer = layer;
@@ -180,9 +207,8 @@ public sealed class ControllerDebugRays : MonoBehaviour
         right.startWidth = .003f; right.endWidth = .004f;
         var start = VrToolPresentation.Equipment ? VrAvatarVisuals.ToolBeamOrigin(VrToolPresentation.Equipment.CurrentEquipment, pose) : pose.position;
         // A hit between the hand and muzzle cannot produce a backwards beam through the model.
-        right.enabled = Vector3.Dot(start - pose.position, direction) <= distance;
+        right.enabled = showBeam && Vector3.Dot(start - pose.position, direction) <= distance;
         right.SetPosition(0, start); right.SetPosition(1, point);
-        // A small angular-size ring remains readable without becoming a giant distant reticle.
         var radius = Mathf.Clamp(Vector3.Distance(point, VrCamera.ViewCamera.transform.position) * .003f, .008f, .07f);
         var camera = VrCamera.ViewCamera.transform;
         point -= direction * Mathf.Min(.01f, distance * .01f);
@@ -194,8 +220,6 @@ public sealed class ControllerDebugRays : MonoBehaviour
         properties.SetColor("_UnlitColor", color);
         right.startColor = right.endColor = endpoint.startColor = endpoint.endColor = color;
         right.SetPropertyBlock(properties); endpoint.SetPropertyBlock(properties);
-        var status = mode + ": " + range.ToString("F2") + " m";
-        if (status != lastGuide) { lastGuide = status; Debug.Log("[ShipbreakerVr] Tool guide range: " + status); }
     }
 
     private static void ReportTracking(string hand, bool valid, ref bool previous)
@@ -207,6 +231,7 @@ public sealed class ControllerDebugRays : MonoBehaviour
 
     private void Hide()
     {
+        couchReticle.Hide();
         tracking.Clear();
         if (left) left.enabled = false;
         if (right) right.enabled = false;

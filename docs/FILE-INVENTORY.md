@@ -203,3 +203,17 @@ meshes remain in process only. Historical inventory entries describe earlier ver
 0.4.10: `HudMeshPatchTargets.cs` centralizes exact declared method/signature resolution
 and is linked into regression tests against installed UI/TMP assemblies. The plugin
 entrypoint isolates optional HUD patch initialization from core components.
+
+
+## 0.4.42 additions
+
+| File | Responsibility |
+| --- | --- |
+| `ShipbreakerVr/VrInputMode.cs` | Input ownership, native gamepad sampling, handoff cancellation/neutral gating and optional diagnostics. |
+| `ShipbreakerVr/NativeGamepadRouting.cs` | Preserve native InControl arbitration after the neutral gate. |
+| `ShipbreakerVr/Tracking/InputModeSelection.cs` | Reusable activity thresholds and automatic/fixed source selection. |
+| `ShipbreakerVr/VrCouchReticle.cs` | World-space UI aiming ring without input/raycast components. |
+| `ShipbreakerVr/Tracking/ToolReturnVisibility.cs` | Reusable presentation-only stow/settle/visible state. |
+| `tests/InputModeChecks.cs` | Input arbitration, stale/held activity, handoff and device-selection regression checks. |
+
+Tool adapters, haptics and menu ownership honor couch mode. Avatar/held-prop presentation uses shared scaling and stow visibility. Existing tests also cover reticle clipping/bearing and repeated tool return. Temporary interaction diagnostic code is excluded from the release.

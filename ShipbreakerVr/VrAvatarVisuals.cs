@@ -19,7 +19,6 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
     private static VrAvatarVisuals instance;
     private static ConfigEntry<bool> enabledSetting;
     private static ConfigEntry<float> toolScale;
-    private static ConfigEntry<float> grappleScale;
     private static ConfigEntry<Vector3> grappleOffset;
     private static ConfigEntry<float> grappleHandleForward;
     private static ConfigEntry<float> grappleLift;
@@ -51,6 +50,10 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         internal Transform MuzzleMesh;
         internal Vector3 MuzzleMeshPoint;
         internal bool Applied, ReportedAlignment;
+        internal bool ReturnReady, HasNativePose;
+        internal Vector3 PreviousNativePosition;
+        internal Quaternion PreviousNativeRotation;
+        internal readonly ToolReturnVisibility ReturnVisibility = new ToolReturnVisibility();
         internal Vector3 NativeLocalScale, LocalMuzzle;
         internal Quaternion MuzzleRotation;
         internal EquipmentController Equipment;
@@ -70,8 +73,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
     internal static void Configure(ConfigFile config)
     {
         enabledSetting = config.Bind("Avatar", "DisembodiedPresentation", true, "Hide the native body/arms; show tracked tools or cached glove meshes. Disable to restore native visuals.");
-        toolScale = config.Bind("Avatar", "ToolVisualScale", .65f, new ConfigDescription("Equipped cutter/grapple mesh size relative to native size; gameplay aim/range are unchanged.", new AcceptableValueRange<float>(.25f, 1.2f)));
-        grappleScale = config.Bind("Avatar", "GrappleVisualScale", .55f, new ConfigDescription("Separate grapple model scale; cutter retains ToolVisualScale.", new AcceptableValueRange<float>(.25f, 1.2f)));
+        toolScale = config.Bind("Avatar", "ToolVisualScale", .65f, new ConfigDescription("Shared size relative to native size for cutter, grapple, held charge and detonator in both input modes. Legacy GrappleVisualScale is ignored; gameplay aim/range are unchanged.", new AcceptableValueRange<float>(.25f, 1.2f)));
         grappleOffset = config.Bind("Avatar", "GrappleGripOffsetMetres", new Vector3(0, -.045f, .02f), "Grapple model offset from the tracked grip, in controller aim axes; does not move the targeting ray.");
         grappleHandleForward = config.Bind("Avatar", "GrappleHandleForwardMetres", .14f, new ConfigDescription("Distance from the grapple's rear pivot to its handle, after visual scaling. Moves the model back around the tracked hand without changing aim. Fine-tune for comfort.", new AcceptableValueRange<float>(0f, .3f)));
         grappleLift = config.Bind("Avatar", "GrappleLiftMetres", .025f, new ConfigDescription("Additional vertical grapple grip correction in controller aim axes.", new AcceptableValueRange<float>(-.1f, .1f)));
@@ -158,6 +160,14 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         { visibility.Add(renderer, renderer.forceRenderingOff); renderer.forceRenderingOff = true; }
     }
     private void Save(Transform value) => transforms.Add(new SavedTransform(value));
+    internal static bool IsToolHeld(EquipmentController equipment, EquipmentController.Equipment kind)
+    {
+        // CurrentEquipment remains selected while grabbing/interacting, even
+        // though the native tool is moved to a rest point below the player.
+        if (!equipment || equipment.IsNothingEquipped || equipment.CurrentEquipment != kind) return false;
+        var hand = instance && instance.grab ? instance.grab.RightHand : null;
+        return hand == null || hand.CurrentlyHoldingEquipment(kind);
+    }
     private void BeforeCamera(ScriptableRenderContext context, Camera camera)
     {
         Restore();
@@ -166,8 +176,67 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         if (failed || !enabledSetting.Value || !ModXrManager.IsVrEnabled || !camera || camera != VrCamera.ViewCamera || !VrCamera.BodyTransform) return;
         try
         {
-            tracking.Sample();
             headVisibility.Apply(animator);
+            // The separate native shadow models must not become visible duplicates
+            // in either input mode. Restore() preserves their game-owned settings.
+            foreach (var tool in tools)
+            {
+                foreach (var renderer in tool.Shadows)
+                    if (renderer && !shadows.ContainsKey(renderer)) { shadows.Add(renderer, renderer.shadowCastingMode); renderer.shadowCastingMode = ShadowCastingMode.ShadowsOnly; }
+                if (!tool.Root) continue;
+                var position = tool.Root.localPosition;
+                var rotation = tool.Root.localRotation;
+                var dt = Time.deltaTime;
+                // Native roots spring back relative to their equipment attachment.
+                // Wait for that motion to settle; do not reveal the rising tool.
+                var settled = tool.HasNativePose && dt > 0 &&
+                    Vector3.Distance(position, tool.PreviousNativePosition) <= .03f * dt &&
+                    Quaternion.Angle(rotation, tool.PreviousNativeRotation) <= 10f * dt;
+                tool.ReturnReady = tool.ReturnVisibility.Sample(yard && IsToolHeld(tool.Equipment, tool.Kind), settled, dt);
+                tool.PreviousNativePosition = position; tool.PreviousNativeRotation = rotation; tool.HasNativePose = true;
+            }
+            // Couch mode keeps the game's own animated placement and muzzle axes.
+            // Restore() above has already undone any prior motion-controller pose.
+            if (!VrInputMode.MotionActive)
+            {
+                foreach (var renderer in bodyMeshes) Hide(renderer);
+                foreach (var tool in tools)
+                {
+                    if (!tool.Root || !tool.Equipment) continue;
+                    if (!tool.ReturnReady)
+                    {
+                        foreach (var renderer in tool.Renderers) Hide(renderer);
+                        continue;
+                    }
+                    // Use the same reduced size as motion mode while retaining
+                    // the native animated muzzle position and right-stick aim.
+                    if (tool.Muzzle && tool.Muzzle.IsChildOf(tool.Root))
+                    {
+                        var muzzle = tool.Muzzle.position;
+                        Save(tool.Root);
+                        tool.Root.localScale *= toolScale.Value;
+                        tool.Root.position += muzzle - tool.Muzzle.position;
+                    }
+                }
+                if (yard && IsToolHeld(VrToolPresentation.Equipment, EquipmentController.Equipment.DemoCharge))
+                {
+                    FindHeldCharge();
+                    // Shrink only the held visual geometry around its native centre.
+                    // Preserve the animation, skeleton, wall preview and placed charges.
+                    if (detonator.DrawAtNativePose(toolScale.Value, camera))
+                        foreach (var renderer in detonatorMeshes) Hide(renderer);
+                    if (heldCharge.DrawAtNativePose(toolScale.Value, camera))
+                        foreach (var renderer in chargeMeshes) Hide(renderer);
+                }
+                else
+                {
+                    FindHeldCharge();
+                    foreach (var renderer in detonatorMeshes) Hide(renderer);
+                    foreach (var renderer in chargeMeshes) Hide(renderer);
+                }
+                return;
+            }
+            tracking.Sample();
             // Capture native gloves before hiding the source; never rotate or scale skeleton bones.
             if (animator) gloves.TryCapture(animator);
             foreach (var renderer in bodyMeshes) Hide(renderer);
@@ -184,8 +253,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
             var aimValid = Application.isFocused && tracking.Head.IsValid && tracking.RightHand.Aim.IsValid && tracking.RightHand.Grip.IsValid;
             var aim = aimValid ? ShipbreakerTrackingSpace.ToWorld(tracking.Head, tracking.RightHand.Aim, body.position, body.rotation, VrCamera.EyeOffset) : default;
             var grip = aimValid ? ShipbreakerTrackingSpace.ToWorld(tracking.Head, tracking.RightHand.Grip, body.position, body.rotation, VrCamera.EyeOffset) : default;
-            if (yard && aimValid && VrToolPresentation.Equipment &&
-                VrToolPresentation.Equipment.CurrentEquipment == EquipmentController.Equipment.DemoCharge)
+            if (yard && aimValid && IsToolHeld(VrToolPresentation.Equipment, EquipmentController.Equipment.DemoCharge))
             {
                 var attachment = grab?.RightHand?.EquipmentGeoTransform;
                 if (attachment)
@@ -209,9 +277,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
             foreach (var tool in tools)
             {
                 if (!tool.Root || !tool.Equipment) continue;
-                foreach (var renderer in tool.Shadows)
-                    if (renderer && !shadows.ContainsKey(renderer)) { shadows.Add(renderer, renderer.shadowCastingMode); renderer.shadowCastingMode = ShadowCastingMode.ShadowsOnly; }
-                if (!yard || tool.Equipment.CurrentEquipment != tool.Kind || !aimValid)
+                if (!tool.ReturnReady || !aimValid)
                 {
                     foreach (var renderer in tool.Renderers)
                         if (renderer && !visibility.ContainsKey(renderer)) { visibility.Add(renderer, renderer.forceRenderingOff); renderer.forceRenderingOff = true; }
@@ -221,7 +287,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
                 if (!tool.Muzzle || !tool.Muzzle.IsChildOf(tool.Root)) continue;
                 Save(tool.Root);
                 ResolveTool(tool, aim, grip, out var rootPose, out var targetMuzzle);
-                tool.Root.localScale = tool.NativeLocalScale * VisualScale(tool);
+                tool.Root.localScale = tool.NativeLocalScale * toolScale.Value;
                 tool.Root.SetPositionAndRotation(rootPose.position, rootPose.rotation);
                 if (tool.Kind == EquipmentController.Equipment.CuttingTool)
                     tool.Root.position += targetMuzzle - tool.Muzzle.position;
@@ -243,7 +309,6 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         }
         catch (Exception error) { failed = true; Restore(); Debug.LogError("[ShipbreakerVr] Avatar visual adjustment disabled; native visuals restored. " + error); }
     }
-    private static float VisualScale(Tool tool) => tool.Kind == EquipmentController.Equipment.GrappleHook ? grappleScale.Value : toolScale.Value;
     private static void ResolveTool(Tool tool, Pose aim, Pose grip, out Pose root, out Vector3 muzzle)
     {
         // Cutter child transforms animate after Awake. Never calibrate them from
@@ -256,7 +321,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         }
         var rotation = aim.rotation * Quaternion.Inverse(tool.MuzzleRotation);
         var parentScale = tool.Root.parent ? tool.Root.parent.lossyScale : Vector3.one;
-        var scaledMuzzle = Vector3.Scale(tool.LocalMuzzle, Vector3.Scale(tool.NativeLocalScale, parentScale)) * VisualScale(tool);
+        var scaledMuzzle = Vector3.Scale(tool.LocalMuzzle, Vector3.Scale(tool.NativeLocalScale, parentScale)) * toolScale.Value;
         var rotatedMuzzle = rotation * scaledMuzzle;
         var desired = tool.Kind == EquipmentController.Equipment.GrappleHook
             ? PresentationGeometry.ToolPivot(grip.position, aim.rotation, grappleOffset.Value + Vector3.up * grappleLift.Value, grappleHandleForward.Value)
@@ -267,7 +332,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
     }
     internal static Vector3 ToolBeamOrigin(EquipmentController.Equipment kind, Pose aim)
     {
-        if (!instance || instance.failed || !enabledSetting.Value || !ModXrManager.IsVrEnabled || !VrCamera.BodyTransform) return aim.position;
+        if (!instance || instance.failed || !enabledSetting.Value || !VrInputMode.MotionActive || !VrCamera.BodyTransform) return aim.position;
         instance.tracking.Sample();
         if (!instance.tracking.Head.IsValid || !instance.tracking.RightHand.Grip.IsValid) return aim.position;
         var body = VrCamera.BodyTransform;
@@ -281,7 +346,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
                 {
                     var local = tool.Root.InverseTransformPoint(tool.MuzzleMesh.TransformPoint(tool.MuzzleMeshPoint));
                     var parentScale = tool.Root.parent ? tool.Root.parent.lossyScale : Vector3.one;
-                    return rootPose.position + rootPose.rotation * Vector3.Scale(local, Vector3.Scale(tool.NativeLocalScale, parentScale)) * VisualScale(tool);
+                    return rootPose.position + rootPose.rotation * Vector3.Scale(local, Vector3.Scale(tool.NativeLocalScale, parentScale)) * toolScale.Value;
                 }
                 return muzzle;
             }

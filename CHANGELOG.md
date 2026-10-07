@@ -1,5 +1,17 @@
 # Changes
 
+## 0.4.42 beta1 — couch/gamepad play and consistent tool presentation
+
+- Add automatic switching between motion controls and native gamepad controls on deliberate button/stick input, plus fixed Gamepad and MotionControllers preferences. Idle tracking does not take over; release controls after switching.
+- Support Xbox-style gamepads and Steam Controller gamepad layouts through Steam Input. Couch aiming uses the right stick with independent headset looking, native bindings, menus and gamepad vibration. Individual Steam Input layouts still require testing.
+- Let native gamepad arbitration continue after handoff instead of repeatedly overriding the active device, addressing the input loss reported during early couch tests.
+- Add readable world-space cutter/grapple aiming rings in couch mode. Preserve native tool range and game rules.
+- Use one 65%-of-native default scale for cutter, grapple, held charge and detonator in both modes. Preserve original meshes/textures, native couch placement and calibrated motion aiming. Ignore the retired separate GrappleVisualScale setting.
+- Hide stowed tools during grabs and console/door interactions. Wait for cutter/grapple return movement to settle before showing them again; hide separate native shadow copies.
+- Retain the established HUD, menus, loading, structural scanner, helmet-damage and XR haptic fixes. Remove temporary interaction tracing; detailed input diagnostics remain off by default.
+
+Versions 0.4.33–0.4.41 were local test builds. The user confirmed working controls, reticles, sizing, doors/consoles and tool return behavior in the final iterations. This release is packaging/diagnostic cleanup of that baseline; see docs/RELEASE-VALIDATION.md for validation limits.
+
 ## 0.4.32 beta1 — helmet damage and input recovery prevention
 
 - Attach visor damage to the tracked head and read eye coverage from the actual HDRP/OpenXR render passes.

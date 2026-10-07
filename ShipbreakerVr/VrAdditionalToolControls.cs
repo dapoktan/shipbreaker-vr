@@ -23,7 +23,7 @@ internal sealed class VrAdditionalToolControls : MonoBehaviour
     private int Mode => !equipment ? 0 : equipment.CurrentEquipment == EquipmentController.Equipment.DemoCharge ? 2 :
         equipment.CurrentEquipment == EquipmentController.Equipment.Scanner ? 3 :
         equipment.CurrentEquipment == EquipmentController.Equipment.CuttingTool && cutter && cutter.CurrentMode == CuttingToolController.CutterMode.Cutter ? 1 : 0;
-    private bool Controls => enabledSetting.Value && ModXrManager.IsVrEnabled && Mode != 0;
+    private bool Controls => enabledSetting.Value && VrInputMode.MotionActive && Mode != 0;
     private bool Context => Controls && !failed && Application.isFocused && LynxControls.Instance && LynxControls.Instance.IsGameFocused &&
         GameSession.CurrentGameState == GameSession.GameState.Gameplay && !EquipmentController.ToolMenuOpen && !VrMenuControls.PauseInputConsumed &&
         LynxControls.Instance.TryGetLoadedActionSet(LynxControls.PlayerActionSetTypes.GameplayActions)?.Enabled == true && VrCamera.BodyTransform && VrCamera.ViewCamera;
@@ -122,7 +122,7 @@ internal sealed class VrAdditionalToolControls : MonoBehaviour
         var size = new Vector2(LynxCameraController.ScreenWidth, LynxCameraController.ScreenHeight);
         if (instance && instance.valid && camera == instance.aimCamera)
             return new Ray(camera.transform.position, camera.transform.rotation * ToolProjection.Direction(pixel, size, camera.fieldOfView, camera.aspect));
-        if (ModXrManager.IsVrEnabled && camera == VrCamera.ViewCamera && size.x > 0 && size.y > 0)
+        if (ModXrManager.IsVrEnabled && (camera == VrCamera.ViewCamera || (VrInputMode.CouchActive && camera == LynxCameraController.MainCamera)) && size.x > 0 && size.y > 0)
             return camera.ViewportPointToRay(new Vector3(pixel.x / size.x, pixel.y / size.y, 0), Camera.MonoOrStereoscopicEye.Mono);
         return camera.ScreenPointToRay(pixel);
     }
@@ -158,5 +158,9 @@ internal sealed class VrAdditionalToolControls : MonoBehaviour
     }
     internal static Camera ScannerCamera() => ModXrManager.IsVrEnabled && VrCamera.ViewCamera ? VrCamera.ViewCamera : LynxCameraController.MainCamera;
     private void OnDisable() => Reset();
+    internal static void InputOwnerChanged()
+    {
+        if (instance) { instance.Reset(); instance.sampledFrame = -1; }
+    }
     private void OnDestroy() { if (instance == this) instance = null; }
 }
