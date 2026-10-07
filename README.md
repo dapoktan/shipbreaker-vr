@@ -1,4 +1,4 @@
-# Shipbreaker VR — 0.4.42 beta1
+# Shipbreaker VR — 0.4.44 beta1
 
 An unofficial Windows PCVR mod for **Hardspace: Shipbreaker**, based on [Raicuparta/shipbreaker-vr](https://github.com/Raicuparta/shipbreaker-vr). Uses OpenXR for headset/controller tracking and game-specific adapters for tools, movement and menus.
 
@@ -20,7 +20,7 @@ No Unity editor, developer SDK, separate BepInEx installation or mod manager is 
 
 - Tracked controller tool aim, movement, tool selection, menus and haptics.
 - Automatic couch/gamepad mode with native bindings, right-stick aiming, independent head looking and visible aiming rings.
-- Consistent 65%-size held tools in both modes, hidden while stowed and during their return movement.
+- Consistent 65%-size held tools in both modes, with immediate ordinary tool switching and synchronized tool/heat-bar hiding during grabs and interactions.
 - Disembodied tools with calibrated beam origins; stock tool range and game rules.
 - Head-following curved gameplay HUD, loading/menu composition and clipped ship cards.
 - Structural scanner room labels and pressure indicators.
@@ -50,6 +50,6 @@ The scripts are unsigned. The ZIP SHA-256 detects accidental corruption; it is n
 
 See [known issues and test checklist](docs/KNOWN-ISSUES.md). Close the game before sharing `BepInEx/LogOutput.log`; review it for local paths/system details first. F7 records UI diagnostics. F9 starts/stops an optional timing capture; reports are written under `BepInEx`.
 
-This beta adds couch/gamepad play and tool presentation improvements to the 0.4.32-beta1 baseline. The user accepted the final 0.4.41 gameplay test, including doors/consoles and tool return behavior. Version 0.4.42 removes temporary diagnostics and prepares the portable release. The final ZIP is validated separately from headset gameplay; see docs/RELEASE-VALIDATION.md in the source repository. Other headset/runtime and Steam Input layout combinations remain unverified.
+This beta adds couch/gamepad play and tool presentation improvements to the 0.4.32-beta1 baseline. The user accepted the final 0.4.44 gameplay test, including the heat-bar and tool-switch corrections. The package uses that accepted binary; the final ZIP is validated separately from headset gameplay. See docs/RELEASE-VALIDATION.md in the source repository. Other headset/runtime and Steam Input layout combinations remain unverified. Very high supersampling caused out-of-memory failures during Free Play loading in both an earlier test build and the release candidate; reducing resolution allowed loading. No memory-crash fix is claimed.
 
 Source build instructions: [BUILD.md](docs/BUILD.md). Architecture and file inventory are in the source repository's `docs` folder. Mod source retains the upstream MIT license; bundled runtime notices are in [THIRD-PARTY.md](THIRD-PARTY.md) and `licenses`.

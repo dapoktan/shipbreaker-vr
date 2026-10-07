@@ -6,10 +6,14 @@ namespace ShipbreakerVr.Tracking;
 internal sealed class ToolReturnVisibility
 {
     private float elapsed, stable;
-    private bool visible;
-    internal bool Sample(bool held, bool poseSettled, float deltaTime)
+    private bool visible, returningFromStow;
+    internal bool Sample(bool selected, bool held, bool poseSettled, float deltaTime)
     {
-        if (!held) { elapsed = stable = 0; visible = false; return false; }
+        // Selecting a different tool is not a return from a grab/interaction.
+        // Only wait when the same selected tool was actually put away.
+        if (!selected) { elapsed = stable = 0; visible = returningFromStow = false; return false; }
+        if (!held) { elapsed = stable = 0; visible = false; returningFromStow = true; return false; }
+        if (!returningFromStow) { visible = true; return true; }
         if (visible) return true; // Normal tool shake must not flicker visibility.
         if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime) || deltaTime <= 0) return false;
         // A hitch is not evidence that the intervening animation was stationary.

@@ -1,6 +1,6 @@
 # Shipbreaker VR architecture
 
-Based on Raicuparta/shipbreaker-vr commit `0c13a9997b9725d699092688d51277f4bc9b0211`. Current release: **0.4.42 beta1**. Earlier sections describe their original milestone and are retained as historical design context.
+Based on Raicuparta/shipbreaker-vr commit `0c13a9997b9725d699092688d51277f4bc9b0211`. Current release: **0.4.44 beta1**. Earlier sections describe their original milestone and are retained as historical design context.
 
 ## 0.4.42 input ownership and presentation
 
@@ -11,6 +11,8 @@ Couch mode releases the synthetic motion pad's action-set ownership. Tool adapte
 `VrCouchReticle` renders a raycast endpoint as a world-space UI ring with no raycaster/input component. Its angular size and clipping adjustments are presentation only. `VrAvatarVisuals` preserves native couch placement, shares ToolVisualScale across all held tools, and hides unequipped models based on equipment and hand state. `ToolReturnVisibility` waits for native root motion to settle before revealing a returning cutter/grapple, then latches visibility through normal shake. All pose/visibility overrides restore before native gameplay updates. `VrHandPropVisuals` scales only copied held charge/detonator geometry; native bones, deployed charges and surface previews stay game-owned.
 
 Temporary interaction tracing is removed from release builds. Detailed motion/gamepad input logging is opt-in under Diagnostics.VerboseMenuInput. HUD, scanner, loading and helmet presentation follow the established 0.4.32 baseline.
+
+In 0.4.44 the return gate distinguishes a selected-but-stowed tool from an unselected tool: ordinary selection is immediate; returning from a grab or interaction waits for native motion to settle. The cutter heat bar's explicitly owned UI graphics and tool-child canvases share the mesh visibility gate. CanvasRenderer opacity is restored with the other frame overrides, leaving native heat updates and interaction behavior intact.
 
 ## 0.4.10 startup boundary
 

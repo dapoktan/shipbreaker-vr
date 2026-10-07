@@ -1,3 +1,25 @@
+# Portable 0.4.44-beta1 validation — 2026-10-07
+
+- User accepted the final 0.4.44 gameplay test after confirming heat-bar hiding and then testing the ordinary tool-switch correction. Packaged the exact accepted test DLL (pre-sanitization SHA-256 `958057F526BBAB78A608D2431B07FB0DD4FA85F6BDB9943C0A9D926D49CC6B90`), without another gameplay or diagnostic change.
+- Managed Release builds succeeded with zero warnings/errors; **448 checks passed**. The extra cases cover ordinary tool selection versus selected-but-stowed returns. Unity exports/packages and installer logic are unchanged; their earlier clean-restore/import and installer integration validation is retained, not represented as rerun.
+- **21 full-package checks passed** under Windows PowerShell 5.1, including fresh/legacy install, reinstall, uninstall, payload checksums, preservation of unrelated data and accepted settings. A separate copy of the current recorded installation verified the private test-to-public transition: all 35 installed hashes matched and the personal mod configuration stayed byte-identical. The actual game installation was not changed by this preparation.
+- Source and ZIP scan: 258 source files and 64 ZIP files, both compressed UnityFS bundles inspected, no checked private identifiers or credential patterns. Comparison to build inputs limits sanitization to debug-path regions in 12 unsigned DLLs; executable bytes remain unchanged. No personal mod config, game-managed DLLs, logs or test backups are distributed. This is a bounded scan, not proof against every possible encoding.
+- ZIP: `ShipbreakerVR-0.4.44-beta1-portable.zip`; SHA-256 `0F19010243CAB94864F779DAFB12171A88C5B48EDF2AC8A3530BF81D36F8E570`. Local publication records contain the final commit/tag and exact-commit audit. The final portable ZIP has not had a separate headset run, but its executable code is the accepted test code.
+- VRAM source review against 0.4.32 found no new render targets, larger textures or changed Unity/OpenXR assets. The new couch ring has 66 vertices/64 triangles and one reused UI material; held-prop rendering reuses existing mesh buffers and shared materials. Tool scaling does not shrink texture allocations. The .43/.44 corrections add visibility/state handling, not GPU buffers. This is not a measured GPU-memory comparison or leak audit; shared rendering/runtime behavior and the high-supersampling failure below remain unresolved. Nothing was pushed or uploaded during preparation.
+
+Historical test records follow.
+
+# 0.4.44 tool-switch test — 2026-10-07
+
+- User confirmed 0.4.43 hides the heat bar while the cutter is invisible, but reported delayed tool switching. The return gate had treated every unequipped tool as temporarily stowed, including tools not selected at all.
+- Distinguish selected-but-stowed from unselected. Ordinary held-tool selection is visible immediately; a grab/interaction return still waits for the native pose to settle. Heat-bar visibility uses the same gate. Release build: zero warnings/errors; 448 managed checks passed, including ordinary switches, switching away during a pending return, and retaining protection when a hand remains occupied. Live verification remains pending.
+
+# 0.4.43 heat-bar test — 2026-10-07
+
+- Native `CutterHeatBarUIController` owns UI graphics separately from the tool mesh. The test build suppresses their render opacity through the same tool-return visibility path and restores native opacity at frame end/early update. No heat, input or interaction logic changes. Headset verification remains pending.
+- During the 0.4.42 release smoke test, Free Play loading failed at SteamVR 500% (4828 × 4828 per eye); a preceding failed launch logged repeated D3D11 out-of-memory texture allocations. The user repeated the test with the previously accepted 0.4.41 mod and previous startup helper: it also crashed at 500%, then loaded at 200%. This does not identify why 500% had worked earlier or rule out shared mod/runtime memory use. Do not characterize it as a proven 0.4.42-only regression or a resolved memory defect.
+- Full .32-to-.42 payload comparison found only the main mod DLL and startup helper changed. Startup helper comparison found five identical method bodies; all packaged Unity/OpenXR dependencies and asset bundles are byte-identical.
+
 # Portable 0.4.42-beta1 validation — 2026-10-07
 
 - User accepted the final 0.4.41 gameplay test, including doors/consoles and tools returning without sliding up from the feet. Earlier iterations confirmed gamepad input, aiming reticles and shared 65% sizing. This is not an exhaustive test of every headset or Steam Input layout.

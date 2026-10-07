@@ -35,7 +35,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/Prepare-InControlF
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\PortableInstallerChecks.ps1
 ```
 
-The managed suite covers 441 tracking/input/geometry/cache checks. Preparing the private InControl fixture replaces only its Unity-native clock call so desktop tests can exercise input commit behavior; installed game files are not edited. The installer suite uses an isolated fixture and Windows PowerShell 5.1, matching the public CMD launchers. Neither simulates headset rendering or Unity lifecycle behavior.
+The managed suite covers 448 tracking/input/geometry/cache checks. Preparing the private InControl fixture replaces only its Unity-native clock call so desktop tests can exercise input commit behavior; installed game files are not edited. The installer suite uses an isolated fixture and Windows PowerShell 5.1, matching the public CMD launchers. Neither simulates headset rendering or Unity lifecycle behavior.
 
 ## Portable ZIP
 

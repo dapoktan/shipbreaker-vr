@@ -2,7 +2,7 @@
 
 ## Accepted baseline and limits
 
-The user accepted the 0.4.41 gameplay test, confirming working doors/consoles and tools returning without sliding up from below the player. Earlier tests confirmed gamepad responsiveness, aiming reticles, automatic switching and shared 65% tool scaling. Version 0.4.42 removes temporary interaction tracing and makes verbose input logging opt-in; it does not change that gameplay behavior. This is not a recorded pass of every regression on every controller.
+The user accepted the final 0.4.44 gameplay test after heat-bar visibility and ordinary tool-switch delay corrections. Earlier tests confirmed gamepad responsiveness, aiming reticles, automatic switching, shared 65% tool scaling and door/console interactions. Temporary interaction tracing is removed and verbose input logging is opt-in. This is not a recorded pass of every regression on every controller.
 
 The motion-control baseline has been exercised on Pico Neo 3 over Steam Link and Steam Frame through SteamVR. Couch play was exercised with a separate gamepad. Other headsets/runtimes, mixed controller pairs, left-handed tools, Steam Controller hardware and arbitrary Steam Input/game binding layouts are unverified. Steam Controller support requires a gamepad layout; keyboard/mouse-only layouts do not activate automatic gamepad mode.
 
@@ -16,16 +16,18 @@ The mod depends on internal Mono/Harmony interfaces and pinned Unity/OpenXR pack
 
 UI caching reduced measured mod work, and smoothness on High was reported during development. This is not a promise of native headset refresh or a particular frame rate. CPU/GPU, scene, resolution, reprojection and streaming all matter. Automatic captures are off; F9 is available for diagnosis. The installer does not change SteamVR or game graphics settings.
 
+Free Play loading failed at SteamVR 500% (4828 × 4828 per eye) on the tested system, with repeated D3D11 out-of-memory allocation errors in a failed launch. The previously accepted 0.4.41 build also failed at 500% and loaded at 200%. Lower supersampling is a workaround, not a proven fix for the underlying cause; these percentages are not universal safe limits. No new large render targets/textures were found in the .32-to-.44 changes, but no controlled VRAM comparison or leak investigation has been completed.
+
 ## Portable-package smoke test
 
 After installing the extracted ZIP, check:
 
-1. Log identifies ShipbreakerVr 0.4.42; VR starts and controls respond after releasing/centering.
+1. Log identifies ShipbreakerVr 0.4.44; VR starts and controls respond after releasing/centering.
 2. Switch between gamepad and tracked controls; verify idle controllers/head movement do not take over. Check reconnect, focus loss and handoff during a tool action.
 3. In gamepad mode, move/turn with sticks, look independently with the headset, and check cutter/grapple rings at near/far targets.
 4. Check tool wheel, scanner, flashlight, tethers, Menu/View, options tabs and each controller layout's documented shortcuts.
 5. Check Stinger first shot, Splitsaw angle, grapple/retract/push/tethers and charge/detonator. Verify sizes and muzzle alignment in both modes.
-6. Hold/release RB, use a door and console, and confirm tools hide then return in place while interaction remains functional.
+6. Switch tools without a mod-added delay. Hold/release RB, use a door and console, and confirm tools and cutter heat bar hide/return together while interaction remains functional.
 7. Check main menu, habitat computer/back navigation, loading text over static, Free Play card clipping and HUD readability.
 8. Check structural room/pressure labels, haptics, white/critical helmet damage and repair; quit/relaunch and inspect for repeated errors.
 

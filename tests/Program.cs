@@ -14,17 +14,25 @@ internal static class Program
     private static void CheckPresentation()
     {
         var returning = new ToolReturnVisibility();
-        Check(!returning.Sample(false, true, .05f), "Stowed tool remains invisible even at a stationary rest point");
-        for (var i = 0; i < 20; i++) returning.Sample(true, false, .05f);
-        Check(!returning.Sample(true, false, .05f), "An equipped tool still rising from the feet is not revealed by elapsed time alone");
-        returning.Sample(true, true, .05f);
-        Check(!returning.Sample(true, true, .05f), "A briefly stationary return pose does not reveal the tool");
-        Check(returning.Sample(true, true, .05f), "Settled equipped tool becomes visible");
-        Check(returning.Sample(true, false, .05f), "Normal shake after return does not flicker the tool");
-        Check(!returning.Sample(false, true, .05f), "A second grab immediately hides and resets the tool");
-        Check(!returning.Sample(true, true, 1f), "A hitch cannot skip the return gate");
-        Check(!returning.Sample(true, true, 0f), "Paused animation cannot finish the return gate");
-        Check(!returning.Sample(true, true, float.NaN), "Invalid frame time cannot reveal the tool");
+        Check(returning.Sample(true, true, false, .01f), "Initially equipped tool is visible without a mod-added wait");
+        Check(!returning.Sample(true, false, true, .05f), "Stowed selected tool remains invisible even at a stationary rest point");
+        for (var i = 0; i < 20; i++) returning.Sample(true, true, false, .05f);
+        Check(!returning.Sample(true, true, false, .05f), "An equipped tool still rising from the feet is not revealed by elapsed time alone");
+        returning.Sample(true, true, true, .05f);
+        Check(!returning.Sample(true, true, true, .05f), "A briefly stationary return pose does not reveal the tool");
+        Check(returning.Sample(true, true, true, .05f), "Settled equipped tool becomes visible");
+        Check(returning.Sample(true, true, false, .05f), "Normal shake after return does not flicker the tool");
+        Check(!returning.Sample(true, false, true, .05f), "A second grab immediately hides and resets the tool");
+        Check(!returning.Sample(true, true, true, 1f), "A hitch cannot skip the return gate");
+        Check(!returning.Sample(true, true, true, 0f), "Paused animation cannot finish the return gate");
+        Check(!returning.Sample(true, true, true, float.NaN), "Invalid frame time cannot reveal the tool");
+        Check(!returning.Sample(false, false, false, .01f), "Switching away clears a pending stow return");
+        Check(returning.Sample(true, true, false, .01f), "Switching back shows the held tool immediately even while native pose is moving");
+        var nextTool = new ToolReturnVisibility();
+        Check(!nextTool.Sample(false, false, false, .01f), "An unselected tool stays hidden");
+        Check(nextTool.Sample(true, true, false, .01f), "Newly selected held tool has no minimum delay");
+        Check(!nextTool.Sample(true, false, false, .01f), "New selection cannot reveal a tool while the hand is still occupied");
+        Check(!nextTool.Sample(true, true, false, .01f), "Release after switching during a grab still waits for return");
         var nearAim = PresentationGeometry.CouchMarkerSize(3);
         var farAim = PresentationGeometry.CouchMarkerSize(200);
         Check(Math.Abs(nearAim.x / 3 - farAim.x / 200) < .00001f, "Couch aiming ring retains angular radius at 200 m grapple range");

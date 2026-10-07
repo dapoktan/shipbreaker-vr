@@ -7,6 +7,7 @@ using HarmonyLib;
 using ShipbreakerVr.Tracking;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UI;
 
 namespace ShipbreakerVr;
 
@@ -43,6 +44,8 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
     private readonly List<SavedTransform> transforms = new List<SavedTransform>();
     private readonly Dictionary<LineRenderer, Vector3> beamStarts = new Dictionary<LineRenderer, Vector3>();
     private readonly Dictionary<Renderer, bool> visibility = new Dictionary<Renderer, bool>();
+    private readonly Dictionary<CanvasRenderer, float> uiVisibility = new Dictionary<CanvasRenderer, float>();
+    private readonly Dictionary<CutterHeatBarUIController, CanvasRenderer[]> heatBars = new Dictionary<CutterHeatBarUIController, CanvasRenderer[]>();
     private readonly Dictionary<Renderer, ShadowCastingMode> shadows = new Dictionary<Renderer, ShadowCastingMode>();
     private sealed class Tool
     {
@@ -59,6 +62,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         internal EquipmentController Equipment;
         internal EquipmentController.Equipment Kind;
         internal Renderer[] Renderers;
+        internal CanvasRenderer[] UiRenderers;
         internal Renderer[] Shadows;
         internal LineRenderer[] Beams;
     }
@@ -106,6 +110,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         foreach (var item in instance.tools) if (item.Root == root) return;
         var renderers = root.GetComponentsInChildren<Renderer>(true);
         var tool = new Tool { Beams = beams ?? new LineRenderer[0], Root = root, Muzzle = muzzle, Equipment = equipment, Kind = kind, Renderers = renderers,
+            UiRenderers = root.GetComponentsInChildren<CanvasRenderer>(true),
             NativeLocalScale = root.localScale, LocalMuzzle = muzzle ? root.InverseTransformPoint(muzzle.position) : Vector3.zero,
             MuzzleRotation = muzzle ? Quaternion.Inverse(root.rotation) * muzzle.rotation : Quaternion.identity,
             Shadows = shadow ? shadow.GetComponentsInChildren<Renderer>(true) : new Renderer[0] };
@@ -159,6 +164,41 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         if (renderer && !visibility.ContainsKey(renderer))
         { visibility.Add(renderer, renderer.forceRenderingOff); renderer.forceRenderingOff = true; }
     }
+    internal static void RegisterHeatBar(CutterHeatBarUIController owner, Image main, Image idle,
+        CanvasGroup group, List<Graphic> gradientGraphics, List<GameObject> equippedObjects)
+    {
+        if (!instance || !owner) return;
+        // Only widgets explicitly owned by the native heat-bar controller. Do not
+        // disable that controller or its objects: native heat updates must continue.
+        var graphics = new HashSet<Graphic>();
+        if (main) graphics.Add(main);
+        if (idle) graphics.Add(idle);
+        if (group) foreach (var graphic in group.GetComponentsInChildren<Graphic>(true)) graphics.Add(graphic);
+        if (gradientGraphics != null) foreach (var graphic in gradientGraphics) if (graphic) graphics.Add(graphic);
+        if (equippedObjects != null) foreach (var obj in equippedObjects)
+            if (obj) foreach (var graphic in obj.GetComponentsInChildren<Graphic>(true)) graphics.Add(graphic);
+        var renderers = new List<CanvasRenderer>();
+        foreach (var graphic in graphics) if (graphic && graphic.canvasRenderer) renderers.Add(graphic.canvasRenderer);
+        instance.heatBars[owner] = renderers.ToArray();
+    }
+    internal static void UnregisterHeatBar(CutterHeatBarUIController owner)
+    {
+        if (instance) instance.heatBars.Remove(owner);
+    }
+    private void Hide(CanvasRenderer renderer)
+    {
+        if (!renderer || uiVisibility.ContainsKey(renderer)) return;
+        uiVisibility.Add(renderer, renderer.GetAlpha());
+        renderer.SetAlpha(0);
+    }
+    private void HideTool(Tool tool)
+    {
+        foreach (var renderer in tool.Renderers) Hide(renderer);
+        foreach (var renderer in tool.UiRenderers) Hide(renderer);
+        if (tool.Kind == EquipmentController.Equipment.CuttingTool)
+            foreach (var bar in heatBars)
+                if (bar.Key) foreach (var renderer in bar.Value) Hide(renderer);
+    }
     private void Save(Transform value) => transforms.Add(new SavedTransform(value));
     internal static bool IsToolHeld(EquipmentController equipment, EquipmentController.Equipment kind)
     {
@@ -192,7 +232,9 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
                 var settled = tool.HasNativePose && dt > 0 &&
                     Vector3.Distance(position, tool.PreviousNativePosition) <= .03f * dt &&
                     Quaternion.Angle(rotation, tool.PreviousNativeRotation) <= 10f * dt;
-                tool.ReturnReady = tool.ReturnVisibility.Sample(yard && IsToolHeld(tool.Equipment, tool.Kind), settled, dt);
+                var selected = tool.Equipment && tool.Equipment.CurrentEquipment == tool.Kind;
+                var ready = tool.ReturnVisibility.Sample(selected, IsToolHeld(tool.Equipment, tool.Kind), settled, dt);
+                tool.ReturnReady = yard && ready;
                 tool.PreviousNativePosition = position; tool.PreviousNativeRotation = rotation; tool.HasNativePose = true;
             }
             // Couch mode keeps the game's own animated placement and muzzle axes.
@@ -205,7 +247,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
                     if (!tool.Root || !tool.Equipment) continue;
                     if (!tool.ReturnReady)
                     {
-                        foreach (var renderer in tool.Renderers) Hide(renderer);
+                        HideTool(tool);
                         continue;
                     }
                     // Use the same reduced size as motion mode while retaining
@@ -279,8 +321,7 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
                 if (!tool.Root || !tool.Equipment) continue;
                 if (!tool.ReturnReady || !aimValid)
                 {
-                    foreach (var renderer in tool.Renderers)
-                        if (renderer && !visibility.ContainsKey(renderer)) { visibility.Add(renderer, renderer.forceRenderingOff); renderer.forceRenderingOff = true; }
+                    HideTool(tool);
                     continue;
                 }
                 // A native muzzle supplies the mesh's forward-axis correction; no guess based on mesh names.
@@ -362,6 +403,8 @@ internal sealed class VrAvatarVisuals : MonoBehaviour
         foreach (var tool in tools) tool.Applied = false;
         foreach (var pair in visibility) if (pair.Key) pair.Key.forceRenderingOff = pair.Value;
         visibility.Clear();
+        foreach (var pair in uiVisibility) if (pair.Key) pair.Key.SetAlpha(pair.Value);
+        uiVisibility.Clear();
         foreach (var pair in shadows) if (pair.Key) pair.Key.shadowCastingMode = pair.Value;
         shadows.Clear();
 
@@ -385,6 +428,13 @@ internal sealed class VrAvatarEarlyRestore : MonoBehaviour
 [HarmonyPatch]
 internal static class AvatarVisualPatches
 {
+    [HarmonyPostfix, HarmonyPatch(typeof(CutterHeatBarUIController), "Awake")]
+    private static void HeatBar(CutterHeatBarUIController __instance, Image ___m_MainHeatBarFill, Image ___m_IdleHeatBarFill,
+        CanvasGroup ___m_CanvasGroup, List<Graphic> ___m_GraphicsToApplyGradientTo, List<GameObject> ___m_EnableWhileEquipped)
+        => VrAvatarVisuals.RegisterHeatBar(__instance, ___m_MainHeatBarFill, ___m_IdleHeatBarFill,
+            ___m_CanvasGroup, ___m_GraphicsToApplyGradientTo, ___m_EnableWhileEquipped);
+    [HarmonyPrefix, HarmonyPatch(typeof(CutterHeatBarUIController), "OnDestroy")]
+    private static void RemoveHeatBar(CutterHeatBarUIController __instance) => VrAvatarVisuals.UnregisterHeatBar(__instance);
     [HarmonyPostfix, HarmonyPatch(typeof(GrabController), "Awake")]
     private static void Grab(GrabController __instance, HandGrab.HandSettings ___m_HandSettings) => VrAvatarVisuals.RegisterGrab(__instance, ___m_HandSettings.HandAnimationController);
     [HarmonyPostfix, HarmonyPatch(typeof(GrabController), "Update")]

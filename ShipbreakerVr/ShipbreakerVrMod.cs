@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace ShipbreakerVr;
 
-[BepInPlugin("ShipbreakerVr", "ShipbreakerVr", "0.4.42")]
+[BepInPlugin("ShipbreakerVr", "ShipbreakerVr", "0.4.44")]
 public class ShipbreakerVrMod : BaseUnityPlugin
 {
     internal static ConfigEntry<float> DebugRayLength;
