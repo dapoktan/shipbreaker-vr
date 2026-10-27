@@ -1,4 +1,4 @@
-# Controls — 0.4.44 beta1
+# Controls — 0.4.48 beta1
 
 ## Traditional gamepad / couch play
 
@@ -20,7 +20,28 @@ The layouts below apply to **motion-controller mode**.
 
 The active layout follows controller capabilities. Steam Frame exposes the native split gamepad layout; Pico uses the compact VR layout. Begin with both controllers tracked, sticks centered and buttons released. Release triggers after changing tools, tracking recovery or resuming.
 
-## Shared actions
+## Hand-steered movement (default)
+
+Thrust and rotation are split between the left stick and the left controller's orientation.
+
+| Input | Action |
+| --- | --- |
+| Left stick | Thrust in the direction the **left controller points**. Point it up and push forward to rise; point it down to descend. Sideways on the stick strafes relative to the controller. Analog on all three axes. |
+| Hold left grip, then turn / tilt / twist the controller | The suit turns **exactly as the controller turns** from the orientation at the squeeze. Release, bring your hand back to a comfortable spot, squeeze again to continue (a ratchet). Small twists under 20 degrees are ignored so yawing does not roll you. |
+| Left stick click | Brake |
+| Right trigger | Grapple grab, Stinger / Splitsaw cut, demo charge, as in the stick layout |
+| A (right lower button) | Grapple: hold to retract a grabbed object. Empty grapple: hold to preview a tether, release to place it |
+| B (right upper button) | Interact, and grapple push |
+| Right stick click | Recall tethers |
+| Right stick | D-pad: up scanner, down recall tethers, left flashlight, right tool mode |
+
+The left trigger keeps its cutter and demo-charge angle duties; left X keeps the X + Y Select chord. The right grip still changes tool mode. B + Y is still the pause chord, so release A/B before opening the tool wheel. Pair this with F8 (HUD fixed to the body) if the detached body is hard to orientate.
+
+**F10** switches to the two-stick layout below and saves the choice; `[HandMovement] Enabled` in the config does the same. `ThrustFrame = Body` makes the stick thrust along the jetpack nose instead of the controller. `RotationMode = Rate` turns the grip hold into a speed control instead (controller angle from the anchor sets the turn rate, like a stick); `DirectRotationGain` above 1 makes the suit turn further than the hand. `InteractPushButton`, `GrappleRetractTetherButton` and `RecallTethersButton` rebind the right-controller tool actions. Deadzones, range, response curve, hold button, brake button and inversions are under `[HandMovement]`; pitch inversion is shared with `Movement.InvertPitch`.
+
+When the mod has just switched input modes or recovered tracking, centre both sticks and release the grip and brake once before movement resumes. A short pulse on the left controller confirms a new rotation anchor.
+
+## Shared actions (two-stick layout, F10)
 
 | Input | Action |
 | --- | --- |
@@ -40,16 +61,17 @@ Stock range, upgrades, heat, tether capacity and other tool rules remain in effe
 
 | Input | Action |
 | --- | --- |
-| Y **or right full grip click** | Hold for tool wheel, select with **left stick**, release to equip; contextual Y in menus |
+| Y | Hold for tool wheel, select with **left stick**, release to equip; contextual Y in menus |
+| Right full grip click | Tool mode (e.g. cutter mode) in gameplay; RB / next tab in menus |
 | D-pad up **or left full grip click** | Scanner in gameplay; navigate up in menus |
 | D-pad down | Recall tethers |
 | D-pad left | Flashlight |
-| D-pad right | Tool mode |
+| D-pad right | Tool mode (same as right grip) |
 | LB / RB | Native hand-grab actions; previous/next scanner mode while scanning; previous/next tab in menus/options |
 | Menu | Pause/resume |
 | View | Native View/tasks action, where available in the current game mode |
 
-The grip shortcuts use the full squeeze **click** stage, not the analog half squeeze or the index-finger trigger. Original Y and D-pad up still work. If both Y and its grip alias are held, release both to close the wheel. Frame scanner mode switching uses bumpers.
+The grip shortcuts use the full squeeze **click** stage, not the analog half squeeze or the index-finger trigger. In the hand-steered layout the left grip is the turn hold, so in gameplay it does not open the scanner; use D-pad up instead. Original D-pad up and right still work. Frame scanner mode switching uses bumpers.
 
 ## Pico Neo 3 / compact VR layout
 
@@ -78,6 +100,7 @@ Center both sticks. Press and hold both stick clicks **first**, then both grips/
 | F7 | Log UI snapshot |
 | F8 | Toggle gameplay HUD following the head |
 | F9 | Start/stop optional performance capture |
+| F10 | Switch between hand-steered and two-stick movement (saved to config) |
 
 F5/F6 are diagnostic/upstream shortcuts, not required performance settings. Automatic timing tests are disabled by default. Menu laser clicking is not implemented. The game window must be focused; SteamVR dashboard input can prevent game control.
 

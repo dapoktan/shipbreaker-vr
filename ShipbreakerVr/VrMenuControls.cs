@@ -142,14 +142,17 @@ internal sealed class VrMenuControls : MonoBehaviour
                 if (!gamepadReady) { cancelWheel |= wheelOwned; return default; }
                 canRoute = true;
                 var gamepad = MenuInput.Gamepad(GameSession.CurrentGameState == GameSession.GameState.Gameplay,
-                    EquipmentController.ToolMenuOpen, left, right, deadzone.Value, menuLeftTrigger.Held, menuRightTrigger.Held);
+                    EquipmentController.ToolMenuOpen, left, right, deadzone.Value, menuLeftTrigger.Held, menuRightTrigger.Held,
+                    VrMovementControls.HandLayoutActive && VrMovementControls.HandRotateHoldButton == VrButton.LeftGrip);
                 if (gamepad.Start || gamepad.Select) cancelWheel |= wheelOwned;
                 if (gamepad.Tools) wheelOwned = true;
                 else if (!EquipmentController.ToolMenuOpen) { wheelOwned = false; cancelWheel = false; }
                 return gamepad;
             }
             bool Read(ConfigEntry<VrButton> setting) => MovementInput.Button(setting.Value, left, right);
-            var a = Read(confirm); var b = Read(back); var x = Read(interact); var y = Read(tools);
+            // The hand-steered layout moves interact/push to the right controller so the left hand only steers.
+            var interactButton = VrMovementControls.HandLayoutActive && GameSession.CurrentGameState == GameSession.GameState.Gameplay ? VrMovementControls.HandInteractPushButton : interact.Value;
+            var a = Read(confirm); var b = Read(back); var x = MovementInput.Button(interactButton, left, right); var y = Read(tools);
             var m = Read(mode); var first = Read(pauseFirst); var second = Read(pauseSecond);
             var p = Read(previousTab); var n = Read(nextTab);
             var extra1 = Read(misc1); var extra2 = Read(misc2);
@@ -166,8 +169,9 @@ internal sealed class VrMenuControls : MonoBehaviour
             var delayedA = selectDelayA.Sample(ready, selectA, consumed, Time.unscaledTime);
             var delayedB = selectDelayB.Sample(ready, selectB, consumed, Time.unscaledTime);
             if (!ready) { cancelWheel |= wheelOwned; return default; }
-            bool Defer(ConfigEntry<VrButton> setting, bool raw) => setting.Value == selectFirst.Value ? delayedA : setting.Value == selectSecond.Value ? delayedB : raw;
-            a = Defer(confirm, a); b = Defer(back, b); x = Defer(interact, x); y = Defer(tools, y);
+            bool DeferButton(VrButton button, bool raw) => button == selectFirst.Value ? delayedA : button == selectSecond.Value ? delayedB : raw;
+            bool Defer(ConfigEntry<VrButton> setting, bool raw) => DeferButton(setting.Value, raw);
+            a = Defer(confirm, a); b = Defer(back, b); x = DeferButton(interactButton, x); y = Defer(tools, y);
             m = Defer(mode, m); p = Defer(previousTab, p); n = Defer(nextTab, n);
             extra1 = Defer(misc1, extra1); extra2 = Defer(misc2, extra2);
             canRoute = true;
@@ -183,7 +187,17 @@ internal sealed class VrMenuControls : MonoBehaviour
             }
             var result = MenuInput.Route(GameSession.CurrentGameState == GameSession.GameState.Gameplay,
                 EquipmentController.ToolMenuOpen, MovementInput.Deadzone(left.Stick, deadzone.Value),
-                MovementInput.Deadzone(right.Stick, deadzone.Value), a, b, x, y, m, false, p, n, extra1, extra2, false, shift, menuLeftTrigger.Held, menuRightTrigger.Held);
+                // Hand-steered layout: the left grip is the rotation hold and the left stick thrusts, so the
+                // grip + stick D-pad shift must not fire there. Its D-pad lives on the right stick instead.
+                MovementInput.Deadzone(right.Stick, deadzone.Value), a, b, x, y, m, false, p, n, extra1, extra2, false, shift && !VrMovementControls.HandLayoutActive, menuLeftTrigger.Held, menuRightTrigger.Held);
+            // Hand-steered movement frees the right stick, so in gameplay it is the D-pad without holding the modifier.
+            // The modifier itself still gates Mode, so right grip keeps changing tool modes.
+            if (VrMovementControls.RightStickIsDpad && GameSession.CurrentGameState == GameSession.GameState.Gameplay &&
+                !EquipmentController.ToolMenuOpen && !result.Tools && result.Dpad == Vector2.zero)
+            {
+                result.Dpad = DpadInput.Direction(MovementInput.Deadzone(right.Stick, deadzone.Value));
+                if (result.Dpad == Vector2.zero && MovementInput.Button(VrMovementControls.HandRecallTethersButton, left, right)) result.Dpad = Vector2.down;
+            }
             if (result.Tools) wheelOwned = true;
             else if (!EquipmentController.ToolMenuOpen) { wheelOwned = false; cancelWheel = false; }
             return result;
